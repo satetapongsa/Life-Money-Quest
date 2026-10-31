@@ -522,3 +522,69 @@ a.logo { color: inherit; text-decoration: none; }
   font-size: 13px; text-decoration: underline; cursor: pointer;
 }
 .link-btn:disabled { cursor: default; text-decoration: none; }
+
+/* ---------- v2.2: เงินเฟ้อ ---------- */
+.inflation {
+  display: flex; flex-direction: column; gap: 2px; margin: 0 0 16px; padding: 12px 16px; text-align: left;
+  border-radius: 14px; background: #ebfbee; border: 2.5px solid #8ce99a;
+}
+.inf-total { font-family: 'Mitr'; font-size: 26px; color: #2b8a3e; }
+.inflation small { color: var(--ink-soft); line-height: 1.5; }
+
+/* ---------- v2.2: แชร์ตรง / จัดการผลของฉัน ---------- */
+.social { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 12px 0 0; }
+.social > span { color: var(--ink-soft); font-size: 14px; }
+.soc {
+  font-family: 'Mitr'; font-size: 14px; color: #fff; text-decoration: none; padding: 6px 14px; border-radius: 999px;
+  border: 2px solid var(--line); box-shadow: 0 3px 0 var(--line);
+}
+.soc:active { transform: translateY(3px); box-shadow: none; }
+.soc.line { background: #06c755; }
+.soc.fb { background: #1877f2; }
+.soc.x { background: #14171a; }
+.manage {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 16px; padding: 12px 14px;
+  border: 2.5px dashed #c8b8e8; border-radius: 14px; background: #faf7ff;
+}
+.manage .check { margin: 0; }
+.btn.danger { color: #c92a2a; }
+
+/* ---------- v2.2: เทียบกับเพื่อน ---------- */
+.banner-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.compare-card { background: linear-gradient(180deg, #fffdf7, #f3f0ff); }
+.cmp-vs { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
+.cmp-side { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; min-width: 0; }
+.cmp-side small { color: var(--ink-soft); }
+.cmp-label { font-family: 'Mitr'; background: var(--ink); color: #fff !important; padding: 1px 10px; border-radius: 999px; }
+.cmp-avatar { width: 110px; height: 130px; overflow: hidden; }
+.cmp-avatar .avatar { width: 130px; margin: -10px 0 0 -10px; }
+.cmp-name { font-family: 'Mitr'; font-weight: 500; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cmp-total { font-family: 'Mitr'; font-size: 24px; color: var(--brand-2); }
+.vs { font-family: 'Mitr'; font-weight: 600; font-size: 28px; color: var(--pink); -webkit-text-stroke: 1px var(--line); }
+.verdict { text-align: center; font-family: 'Mitr'; font-size: 17px; margin: 14px 0; }
+.cmp-rows { display: flex; flex-direction: column; gap: 6px; }
+.cmp-row { display: grid; grid-template-columns: 1fr 32px 1fr; align-items: center; gap: 6px; }
+.cmp-stage { text-align: center; font-size: 18px; }
+.cmp-bar { height: 12px; border-radius: 999px; background: #eee6fb; overflow: hidden; display: flex; }
+.cmp-bar.left { justify-content: flex-end; }
+.cmp-bar span { height: 100%; background: linear-gradient(90deg, var(--brand), var(--pink)); border-radius: 999px; }
+.cmp-bar.right span { background: linear-gradient(90deg, #ffa94d, #ffd43b); }
+.icon-btn.mute { width: 38px; height: 38px; font-size: 16px; }
+
+/* ---------- v2.2: ช่วงอายุ / สถิติ ---------- */
+.band-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.band-tag { font-family: 'Kanit'; font-size: 14px; color: var(--ink-soft); }
+.stats { margin-top: 26px; padding-top: 18px; border-top: 3px dashed #e5dcf5; }
+.stat-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.stat-tiles > div {
+  display: flex; flex-direction: column; align-items: center; padding: 10px 4px; text-align: center;
+  border: 2.5px solid var(--line); border-radius: 12px; background: #fff;
+}
+.stat-tiles b { font-family: 'Mitr'; font-size: 20px; color: var(--brand-2); }
+.stat-tiles small { color: var(--ink-soft); font-size: 12px; }
+.spark-bars { display: flex; align-items: flex-end; gap: 4px; height: 60px; }
+.spark-bars span { flex: 1; min-height: 3px; background: var(--brand); border-radius: 4px 4px 0 0; }
+.tier-dist { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; align-items: end; height: 90px; }
+.tier-dist > div { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
+.bar-v { width: 70%; min-height: 3px; border-radius: 4px 4px 0 0; border: 1.5px solid var(--line); }
+@media (max-width: 900px) { .stat-tiles { grid-template-columns: repeat(2, 1fr); } }

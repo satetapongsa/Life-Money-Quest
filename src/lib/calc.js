@@ -1,4 +1,5 @@
-import { stagesForAge, stageTotal, typicalEntry } from '../data/stages.js'
+import { stagesForAge, stageTotal, typicalEntry, yearlyAmount } from '../data/stages.js'
+import { inflationFactor } from '../data/inflation.js'
 import { tierFor, tierIndex, badgesFor, TIERS } from '../data/tiers.js'
 
 const SCHOOL_IDS = ['kinder', 'primary', 'middle', 'high']
@@ -44,6 +45,18 @@ export function computeResult(player) {
       uniMode: player.entries.uni?.mode,
     }),
   }
+}
+
+// ยอดรวมแบบปรับเงินเฟ้อ: เงินที่ได้ตอนอายุ x (ปี ค.ศ. = ปีเกิด + x) แปลงเป็นค่าเงินของปี nowYear
+export function inflationAdjusted(player, nowYear = new Date().getFullYear()) {
+  const birthYear = nowYear - player.age
+  const rows = stagesForAge(player.age).map((s) => {
+    const perYear = yearlyAmount(s, player.entries[s.id])
+    let total = 0
+    for (let a = s.from; a < s.from + s.years; a++) total += perYear * inflationFactor(birthYear + a, nowYear)
+    return { stage: s, total }
+  })
+  return { nowYear, birthYear, rows, total: rows.reduce((a, r) => a + r.total, 0) }
 }
 
 export const baht = (n) => Math.round(n).toLocaleString('th-TH')

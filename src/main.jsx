@@ -1,5 +1,6 @@
 import { Component, StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { inject } from '@vercel/analytics'
 import App from './App'
 import './styles.css'
 
@@ -20,6 +21,9 @@ class ErrorBoundary extends Component {
     )
   }
 }
+
+// นับผู้เข้าชมแบบไม่เก็บข้อมูลส่วนตัว (ต้องเปิด Web Analytics ในหน้าโปรเจกต์ Vercel)
+inject()
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

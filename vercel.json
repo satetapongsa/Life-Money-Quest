@@ -3,6 +3,9 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "functions": {
+    "api/og.js": { "includeFiles": "api/_fonts/**", "memory": 1024 }
+  },
   "rewrites": [
     { "source": "/r/:id", "destination": "/api/share-page?id=:id" },
     { "source": "/leaderboard", "destination": "/index.html" }

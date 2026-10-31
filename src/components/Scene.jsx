@@ -163,7 +163,9 @@ const SCENES = {
       <Box x="20" y="360" w="170" h="110" c="#fff4e6" />
       {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => <rect key={i} x={20 + i * 21.25} y="350" width="21.25" height="22" fill={i % 2 ? '#fff' : '#f76707'} />)}
       <rect x="40" y="390" width="130" height="60" fill="#a5d8ff" />
-      <text x="105" y="425" textAnchor="middle" fontSize="20">☕</text>
+      <rect x="94" y="408" width="18" height="16" rx="3" fill="#8b5a2b" />
+      <rect x="110" y="412" width="6" height="7" rx="3" fill="none" stroke="#8b5a2b" strokeWidth="2.5" />
+      <rect x="92" y="424" width="24" height="3" rx="1.5" fill="#5c3d1e" />
     </>
   ),
   travel: () => (

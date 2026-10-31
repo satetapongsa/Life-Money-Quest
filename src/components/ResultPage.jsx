@@ -1,29 +1,39 @@
 import { useEffect, useMemo, useState } from 'react'
-import { computeResult, baht, bahtShort } from '../lib/calc'
+import { computeResult, inflationAdjusted, baht, bahtShort } from '../lib/calc'
+import { inflationFactor } from '../data/inflation'
 import { TIERS, COMPARISONS } from '../data/tiers'
 import { FREQS, SCHOOL_DAYS, lookForAge } from '../data/stages'
-import { shareUrl, saveHistory, SITE_URL } from '../lib/share'
-import { savePlayer, reportPlayer } from '../lib/api'
+import { shareUrl, saveHistory, SITE_URL, ownerTokenFor, forgetHistory, socialLinks, latestOwnResult, setCompareFriend, getCompareFriend } from '../lib/share'
+import CompareCard from './CompareCard'
+import { savePlayer, reportPlayer, managePlayer } from '../lib/api'
 import { unrealisticStages } from '../lib/fairness'
 import { navigate } from '../lib/router'
+import { sfx } from '../lib/sound'
+import { track } from '@vercel/analytics'
 import { TIER_SCENE } from './Scene'
 
 // กันบันทึกซ้ำตอน React StrictMode เรียก effect สองรอบ
 const saving = new WeakMap()
 
-function useCountUp(target, ms = 1400) {
+function useCountUp(target, ms = 1400, sound = false) {
   const [v, setV] = useState(0)
   useEffect(() => {
     let raf
     const t0 = performance.now()
+    let ticks = 0
     const loop = (t) => {
       const k = Math.min(1, (t - t0) / ms)
       setV(target * (1 - Math.pow(1 - k, 3)))
+      if (sound && k < 1 && k * 10 >= ticks + 1) {
+        sfx.coin()
+        ticks++
+      }
       if (k < 1) raf = requestAnimationFrame(loop)
+      else if (sound) sfx.fanfare()
     }
     raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
-  }, [target, ms])
+  }, [target, ms, sound])
   return v
 }
 
@@ -50,8 +60,31 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
       flash('ส่งรายงานไม่สำเร็จ ลองใหม่อีกครั้งนะ')
     }
   }
-  const shown = useCountUp(r.total)
+  const shown = useCountUp(r.total, 1400, !shared)
   const [toast, setToast] = useState('')
+  // เจ้าของผล (มีกุญแจในเครื่อง) จัดการผลของตัวเองได้
+  const ownerToken = ownerTokenFor(savedId)
+  const [isPublicNow, setIsPublicNow] = useState(player.isPublic !== false)
+  const [manageBusy, setManageBusy] = useState(false)
+  const manage = async (action) => {
+    if (action === 'delete' && !window.confirm('ลบผลนี้ถาวร? ลิงก์ที่แชร์ไปจะเปิดไม่ได้อีก และย้อนกลับไม่ได้')) return
+    setManageBusy(true)
+    try {
+      await managePlayer(savedId, ownerToken, action)
+      if (action === 'delete') {
+        forgetHistory(savedId)
+        flash('ลบผลแล้ว')
+        setTimeout(onRestart, 900)
+      } else {
+        setIsPublicNow(action === 'show')
+        flash(action === 'show' ? 'แสดงในลีดเดอร์บอร์ดแล้ว' : 'ซ่อนจากลีดเดอร์บอร์ดแล้ว')
+      }
+    } catch {
+      flash('ทำรายการไม่สำเร็จ ลองใหม่อีกครั้งนะ')
+    } finally {
+      setManageBusy(false)
+    }
+  }
   const [saveState, setSaveState] = useState(savedId ? 'saved' : shared ? 'none' : 'saving')
   const [imgBusy, setImgBusy] = useState(false)
 
@@ -59,24 +92,36 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
   useEffect(() => {
     if (shared || savedId) return
     let alive = true
-    if (!saving.has(player)) saving.set(player, savePlayer(player, player.isPublic !== false))
+    // บันทึกประวัติในเครื่องครั้งเดียวต่อการบันทึก (effect อาจรันซ้ำ)
+    if (!saving.has(player)) {
+      saving.set(
+        player,
+        savePlayer(player, player.isPublic !== false).then(
+          (res) => (saveHistory(player, res.id, res.token), res),
+          (err) => {
+            saveHistory(player)
+            throw err
+          },
+        ),
+      )
+    }
     saving
       .get(player)
       .then(({ id }) => {
-        saveHistory(player, id)
+        track('game_complete', { tier: r.tierIndex, age: Math.floor(player.age / 10) * 10 })
         onSaved?.(id)
         if (alive) setSaveState('saved')
       })
-      .catch(() => {
-        saveHistory(player)
-        if (alive) setSaveState('failed')
-      })
+      .catch(() => alive && setSaveState('failed'))
     return () => {
       alive = false
     }
   }, [player, shared, savedId, onSaved])
   const title = tierTitle(r.tier, player.gender)
   const max = Math.max(...r.rows.map((x) => x.total), 1)
+  const adj = useMemo(() => inflationAdjusted(player), [player])
+  const firstSchool = r.rows.find((x) => x.stage.kind === 'school' && Number(x.entry?.amount) > 0)
+  const firstYear = firstSchool ? adj.birthYear + firstSchool.stage.from : null
   const times = r.ratio.toLocaleString('th-TH', { maximumFractionDigits: 2 })
 
   const summary = `${player.name} อายุ ${player.age} ปี มีเงินไหลผ่านชีวิตมาแล้วประมาณ ${baht(r.total)} บาท เฉลี่ยวันละ ${baht(r.perDay)} บาท คิดเป็น ${times} เท่าของคนไทยทั่วไปที่ผ่านช่วงชีวิตเดียวกัน จึงจัดอยู่ในกลุ่ม "${title}" ${r.tier.emoji}`
@@ -87,6 +132,7 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
   }
 
   const link = shareUrl(player, savedId)
+  const social = socialLinks(link, `${player.name} มีเงินไหลผ่านชีวิตมาแล้ว ${baht(r.total)} บาท! มาลองเล่นดูว่าของคุณเท่าไหร่`)
   const text = `${player.name} มีเงินไหลผ่านชีวิตมาแล้ว ${baht(r.total)} บาท! ได้ระดับ "${title}" ${r.tier.emoji}\nมาลองเล่นดูว่าของคุณเท่าไหร่ 👉`
 
   const share = async () => {
@@ -143,14 +189,32 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
   const shareImage = () => withImage((file) => navigator.share({ files: [file], text: `${text} ${link}` }))
   const canShareFiles = typeof navigator.canShare === 'function' && navigator.canShare({ files: [new File([''], 'x.png', { type: 'image/png' })] })
 
+  // เทียบกับเพื่อน: ดูการ์ดเพื่อนแล้วเทียบกับผลล่าสุดของฉัน หรือเล่นจบแล้วเทียบกับเพื่อนที่ฝากไว้
+  const viewingFriend = shared && !ownerToken
+  const [mine] = useState(() => (viewingFriend ? latestOwnResult() : null))
+  const [compareOpen, setCompareOpen] = useState(false)
+  const [waitingFriend] = useState(() => (shared ? null : getCompareFriend()))
+  const playToCompare = () => {
+    setCompareFriend(player)
+    onRestart()
+  }
+
   return (
     <div className="result pop-in">
-      {shared && (
+      {shared && !ownerToken && (
         <div className="shared-banner">
           <span>👀 คุณกำลังดูผลของ <b>{player.name}</b> — อยากรู้ของตัวเองไหม?</span>
-          <button className="btn small yellow" onClick={onRestart}>เล่นของฉันบ้าง!</button>
+          <div className="banner-actions">
+            {mine && mine.id !== savedId ? (
+              <button className="btn small" onClick={() => setCompareOpen((v) => !v)}>{compareOpen ? 'ปิดการเทียบ' : '⚖️ เทียบกับของฉัน'}</button>
+            ) : (
+              <button className="btn small" onClick={playToCompare}>⚖️ เล่นแล้วเทียบกัน</button>
+            )}
+            <button className="btn small yellow" onClick={onRestart}>เล่นของฉันบ้าง!</button>
+          </div>
         </div>
       )}
+      {compareOpen && mine && <CompareCard me={mine.player} friend={player} />}
 
       <div className="card hero">
         <div className="badge-row">
@@ -164,6 +228,16 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
           {baht(shown)}
         </div>
         <p className="hero-sub">≈ {bahtShort(r.total)} บาท · เฉลี่ยวันละ {baht(r.perDay)} บาท ตลอด {player.age} ปี</p>
+        {adj.total > r.total * 1.005 && (
+          <div className="inflation">
+            <b>📈 ถ้าคิดเป็นค่าเงินปี {adj.nowYear}</b>
+            <span className="inf-total">฿{baht(adj.total)}</span>
+            <small>
+              มากกว่าตัวเลขจริง {Math.round((adj.total / r.total - 1) * 100)}% เพราะเงินสมัยก่อนซื้อของได้มากกว่า
+              {firstSchool && ` — เช่น ค่าขนม ${baht(firstSchool.entry.amount)} บาทตอนปี ${firstYear} เท่ากับราว ${baht(firstSchool.entry.amount * inflationFactor(firstYear, adj.nowYear))} บาทในวันนี้`}
+            </small>
+          </div>
+        )}
         <div className="explain">
           <b>💡 ตัวเลขนี้หมายถึงอะไร?</b>
           <p>
@@ -172,6 +246,8 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
           </p>
         </div>
       </div>
+
+      {waitingFriend && <CompareCard me={player} friend={waitingFriend} />}
 
       <div className="card tier-card" style={{ '--tier': r.tier.color }}>
         <div className="tier-emoji">{r.tier.emoji}</div>
@@ -256,7 +332,7 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
             {saveState === 'saved' &&
               (flagged
                 ? '✅ บันทึกแล้ว · แต่ตัวเลขบางช่วงสูงเกินจริง จึงไม่ขึ้นลีดเดอร์บอร์ด (ยังแชร์ลิงก์ได้ปกติ)'
-                : player.isPublic !== false
+                : isPublicNow
                   ? '✅ บันทึกแล้ว · ชื่อคุณขึ้นลีดเดอร์บอร์ดแล้ว'
                   : '✅ บันทึกแล้ว · ไม่แสดงในลีดเดอร์บอร์ด')}
             {saveState === 'failed' && '⚠️ บันทึกออนไลน์ไม่สำเร็จ ยังแชร์ได้ด้วยลิงก์สำรอง'}
@@ -265,6 +341,12 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
         <div className="link-box">
           <input readOnly value={link} aria-label="ลิงก์ผลลัพธ์" onFocus={(e) => e.target.select()} />
           <button className="btn small yellow" onClick={() => copy(link, 'คัดลอกลิงก์ผลลัพธ์แล้ว!')} disabled={saveState === 'saving'}>คัดลอก</button>
+        </div>
+        <div className="social">
+          <span>แชร์ไปที่</span>
+          <a className="soc line" href={social.line} target="_blank" rel="noopener noreferrer">LINE</a>
+          <a className="soc fb" href={social.facebook} target="_blank" rel="noopener noreferrer">Facebook</a>
+          <a className="soc x" href={social.x} target="_blank" rel="noopener noreferrer">X</a>
         </div>
         <div className="actions wrap">
           <button className="btn big" onClick={share} disabled={saveState === 'saving'}>แชร์ผลลัพธ์ 🔗</button>
@@ -275,7 +357,19 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
           <button className="btn ghost" onClick={onRestart}>🔄 เล่นใหม่</button>
         </div>
         <p className="note">ลิงก์จะเปิดหน้าการ์ดตัวละครและผลสรุปนี้ให้เพื่อนดูได้ทันที</p>
-        {shared && savedId && (
+        {ownerToken && (
+          <div className="manage">
+            <b>⚙️ จัดการผลของฉัน</b>
+            {!flagged && (
+              <label className="check">
+                <input type="checkbox" checked={isPublicNow} disabled={manageBusy} onChange={(e) => manage(e.target.checked ? 'show' : 'hide')} />
+                <span>แสดงในลีดเดอร์บอร์ด</span>
+              </label>
+            )}
+            <button className="btn small ghost danger" onClick={() => manage('delete')} disabled={manageBusy}>🗑️ ลบผลนี้ถาวร</button>
+          </div>
+        )}
+        {shared && savedId && !ownerToken && (
           <button className="link-btn" onClick={report} disabled={reported}>
             {reported ? '🚩 แจ้งแล้ว ขอบคุณนะ' : '🚩 รายงานชื่อหรือผลที่ไม่เหมาะสม'}
           </button>

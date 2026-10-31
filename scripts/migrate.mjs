@@ -40,6 +40,10 @@ await sql`
   )`
 await sql`create index if not exists reports_rate on reports (ip_hash, created_at)`
 
+// v2.2: กุญแจเจ้าของผล (เก็บแค่ค่าแฮช) สำหรับซ่อน/แสดง/ลบผลของตัวเอง
+await sql`alter table players add column if not exists owner_hash text`
+await sql`create index if not exists players_age on players (age) where is_public and not flagged and not hidden`
+
 const [{ version }] = await sql`select version()`
 const [{ count }] = await sql`select count(*)::int as count from players`
 console.log(`OK · ${version.split(' on ')[0]} · players: ${count}`)

@@ -1,6 +1,6 @@
 // โค้ดฝั่งเซิร์ฟเวอร์เท่านั้น (ไฟล์ใน api/_lib ไม่ถูกเปิดเป็น endpoint บน Vercel)
 import { neon } from '@neondatabase/serverless'
-import { createHash, randomBytes } from 'node:crypto'
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
 
 // กันพลาดตอนวางค่าใน Vercel: ช่องว่าง, เครื่องหมายคำพูด, หรือวาง "DATABASE_URL=..." มาทั้งบรรทัด
 const databaseUrl = () =>
@@ -46,7 +46,17 @@ export function ipHash(request) {
   return createHash('sha256').update(`${process.env.IP_HASH_SALT || ''}:${ip}`).digest('base64url').slice(0, 32)
 }
 
-const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+// กุญแจเจ้าของผล: ส่งให้ผู้เล่นครั้งเดียว ฐานข้อมูลเก็บแค่ค่าแฮช
+export const newOwnerToken = () => randomBytes(24).toString('base64url')
+export const tokenHash = (token) => createHash('sha256').update(String(token)).digest('hex')
+export function tokenMatches(token, hash) {
+  if (typeof token !== 'string' || token.length < 20 || typeof hash !== 'string') return false
+  const a = Buffer.from(tokenHash(token))
+  const b = Buffer.from(hash)
+  return a.length === b.length && timingSafeEqual(a, b)
+}
+
+const ALPHABET ='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 export function newId() {
   return Array.from(randomBytes(10), (b) => ALPHABET[b % 62]).join('')
 }
@@ -65,6 +75,7 @@ export function publicRow(r) {
     total: Number(r.total),
     tier: r.tier,
     flagged: !!r.flagged,
+    isPublic: r.is_public !== false,
     createdAt: r.created_at,
   }
 }

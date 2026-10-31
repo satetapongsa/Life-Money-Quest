@@ -1,4 +1,5 @@
 import VersionBadge from './VersionBadge'
+import { useMuted, setMuted, sfx } from '../lib/sound'
 import { baht } from '../lib/calc'
 import { navigate } from '../lib/router'
 
@@ -46,8 +47,22 @@ export function Hud({ label, stages = [], idx = 0, done = {}, coins, page = 'hom
         {page !== 'leaderboard' && (
           <button className="btn small yellow" onClick={() => navigate('/leaderboard')}>🏆 อันดับ</button>
         )}
+        <MuteButton />
         <VersionBadge />
       </div>
     </header>
+  )
+}
+
+function MuteButton() {
+  const muted = useMuted()
+  const toggle = () => {
+    setMuted(!muted)
+    if (muted) sfx.click() // เพิ่งเปิดเสียง
+  }
+  return (
+    <button className="icon-btn mute" onClick={toggle} aria-label={muted ? 'เปิดเสียง' : 'ปิดเสียง'} title={muted ? 'เปิดเสียง' : 'ปิดเสียง'}>
+      {muted ? '🔇' : '🔊'}
+    </button>
   )
 }

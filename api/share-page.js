@@ -25,11 +25,15 @@ export async function GET(request) {
       `<meta property="og:url" content="${esc(`${url.origin}/r/${id}`)}" />`,
       `<meta name="twitter:title" content="${esc(title)}" />`,
       `<meta name="twitter:description" content="${esc(desc)}" />`,
+      `<meta property="og:image" content="${esc(`${url.origin}/api/og?id=${id}`)}" />`,
+      `<meta property="og:image:width" content="1200" />`,
+      `<meta property="og:image:height" content="630" />`,
+      `<meta name="twitter:card" content="summary_large_image" />`,
     ].join('\n    ')
     const html = page
       .replace(/<title>.*?<\/title>/, `<title>${esc(title)}</title>`)
       .replace(/<meta property="og:(title|description|url)"[^>]*>\s*/g, '')
-      .replace(/<meta name="twitter:(title|description)"[^>]*>\s*/g, '')
+      .replace(/<meta name="twitter:(title|description|card)"[^>]*>\s*/g, '')
       .replace('</head>', `    ${meta}\n  </head>`)
     return new Response(html, {
       headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, s-maxage=300, stale-while-revalidate=600' },

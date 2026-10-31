@@ -1,6 +1,6 @@
 // GET /api/player?id=XXXXXXXXXX  → ผลของผู้เล่นหนึ่งคน (สำหรับลิงก์แชร์)
 // POST /api/player                → บันทึกผลใหม่ คืน { id }
-import { db, json, fail, serverError, ipHash, newId, isId, publicRow } from './_lib/db.js'
+import { db, json, fail, serverError, ipHash, newId, isId, publicRow, newOwnerToken, tokenHash } from './_lib/db.js'
 import { fromRecord } from '../src/lib/record.js'
 import { computeResult } from '../src/lib/calc.js'
 import { nameProblem } from '../src/lib/moderation.js'
@@ -49,12 +49,13 @@ export async function POST(request) {
     if (n >= RATE_LIMIT) return fail(429, 'too many requests, try again later')
 
     const id = newId()
+    const token = newOwnerToken()
     await sql`
-      insert into players (id, name, age, gender, look, entries, total, ratio, tier, is_public, flagged, ip_hash, app_version)
+      insert into players (id, name, age, gender, look, entries, total, ratio, tier, is_public, flagged, ip_hash, owner_hash, app_version)
       values (${id}, ${player.name}, ${player.age}, ${player.gender}, ${JSON.stringify(player.look)}::jsonb,
               ${JSON.stringify(player.entries)}::jsonb, ${Math.round(r.total)}, ${r.ratio}, ${r.tierIndex},
-              ${isPublic}, ${flagged}, ${hash}, ${APP_VERSION})`
-    return json({ id, tier: r.tierIndex, total: Math.round(r.total), flagged }, 201)
+              ${isPublic}, ${flagged}, ${hash}, ${tokenHash(token)}, ${APP_VERSION})`
+    return json({ id, token, tier: r.tierIndex, total: Math.round(r.total), flagged }, 201)
   } catch (err) {
     return serverError('POST /api/player', err)
   }

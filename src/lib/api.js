@@ -14,6 +14,14 @@ export const savePlayer = (player, isPublic) => postJson('/api/player', { record
 
 export const fetchPlayer = (id) => request(`/api/player?id=${encodeURIComponent(id)}`)
 
-export const fetchLeaderboard = (tier) => request(`/api/leaderboard${tier === null ? '' : `?tier=${tier}`}`)
+export function fetchLeaderboard(tier, band = 'all') {
+  const qs = new URLSearchParams({ band })
+  if (tier !== null) qs.set('tier', tier)
+  return request(`/api/leaderboard?${qs}`)
+}
+
+export const fetchStats = () => request('/api/stats')
 
 export const reportPlayer = (id) => postJson('/api/report', { id })
+
+export const managePlayer = (id, token, action) => postJson('/api/manage', { id, token, action })

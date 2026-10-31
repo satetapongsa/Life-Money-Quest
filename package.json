@@ -5,19 +5,24 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build:og && vite build",
     "preview": "vite preview",
     "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
-    "mod": "node --env-file=.env.local scripts/moderate.mjs"
+    "mod": "node --env-file=.env.local scripts/moderate.mjs",
+    "test": "vitest run",
+    "build:og": "node scripts/build-og.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "@vercel/analytics": "^2.0.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^6.1.2",
-    "vite": "^8.3.5"
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   },
   "engines": {
     "node": ">=20.19"

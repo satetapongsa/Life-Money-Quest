@@ -3,6 +3,7 @@ import Avatar, { avatarGeometry } from './Avatar'
 import Scene, { SCENE_INFO } from './Scene'
 import { CELEBRATIONS, FIDGETS } from '../data/avatars'
 import { pick } from '../lib/color'
+import { sfx } from '../lib/sound'
 
 export const LOOK_LABEL = {
   baby: 'วัยทารก 👶',
@@ -37,10 +38,13 @@ export default function AvatarStage({ player, look, scene, levelUpKey, caption, 
     timers.current = []
     morphing.current = true
     setPhase('morph')
+    sfx.morph()
+    later(SWAP_MS, sfx.levelUp)
     setAction('stretch')
     later(MORPH_MS, () => {
       morphing.current = false
       setPhase('celebrate')
+      sfx.fanfare()
       setAction(pick(CELEBRATIONS))
     })
     later(MORPH_MS + CELEBRATE_MS, () => {
@@ -75,6 +79,7 @@ export default function AvatarStage({ player, look, scene, levelUpKey, caption, 
 
   const poke = () => {
     if (phase !== 'idle') return
+    sfx.boop()
     setAction(pick(CELEBRATIONS))
     later(1500, () => setAction(null))
   }
