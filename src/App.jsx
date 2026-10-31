@@ -1,74 +1,130 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import AvatarStage from './components/AvatarStage'
 import StartPage from './components/StartPage'
 import StagePage from './components/StagePage'
 import CalculatingPage from './components/CalculatingPage'
 import ResultPage from './components/ResultPage'
+import Leaderboard from './components/Leaderboard'
 import Gallery from './components/Gallery'
+import { Layout, Hud } from './components/Shell'
+import { LOOK_SCENE, TIER_SCENE } from './components/Scene'
 import { randomLook } from './data/avatars'
 import { stagesForAge, lookForAge, stageTotal } from './data/stages'
-import { baht } from './lib/calc'
-import { readSharedFromHash, saveHistory } from './lib/share'
+import { computeResult } from './lib/calc'
+import { readSharedFromHash } from './lib/share'
+import { fetchPlayer } from './lib/api'
+import { useRoute, navigate } from './lib/router'
 
 const freshPlayer = () => {
   const gender = Math.random() < 0.5 ? 'm' : 'f'
-  return { name: '', age: '', gender, look: randomLook(gender), entries: {} }
+  return { name: '', age: '', gender, look: randomLook(gender), entries: {}, isPublic: true }
 }
 
 const stageLook = (stage, entry) => (stage.altMode && entry?.mode === 'work' ? stage.altMode.look : stage.look)
 
 export default function App() {
   if (import.meta.env.DEV && window.location.hash === '#gallery') return <Gallery />
-  return <Game />
+  return <Router />
 }
 
-function Game() {
-  const [shared, setShared] = useState(() => readSharedFromHash())
+function Router() {
+  const route = useRoute()
+  // สถานะเกมอยู่ที่นี่ เพื่อให้กดไปดูลีดเดอร์บอร์ดแล้วกลับมาเล่นต่อได้
+  const game = useGame()
+  const [hashShared] = useState(readSharedFromHash)
+
+  if (route.name === 'leaderboard') return <Leaderboard />
+  if (route.name === 'result') return <SharedResult key={route.id} id={route.id} onRestart={game.restart} />
+  if (hashShared && game.screen === 'start' && window.location.hash) {
+    return <SharedView player={hashShared} onRestart={game.restart} />
+  }
+  return <Game game={game} />
+}
+
+// ---- ผลของเพื่อน (ลิงก์ /r/<id>) ----
+function SharedResult({ id, onRestart }) {
+  const [state, setState] = useState({ loading: true })
+  useEffect(() => {
+    let alive = true
+    fetchPlayer(id)
+      .then((p) => alive && setState({ player: p, loading: false }))
+      .catch(() => alive && setState({ loading: false, error: true }))
+    return () => {
+      alive = false
+    }
+  }, [id])
+
+  if (state.player) return <SharedView player={state.player} id={id} onRestart={onRestart} />
+  const msg = state.loading ? 'กำลังโหลดการ์ดของเพื่อน...' : 'ไม่พบผลลัพธ์นี้ ลิงก์อาจไม่ถูกต้อง'
+  return (
+    <Layout
+      hud={<Hud label="ผลลัพธ์ของเพื่อน" />}
+      left={
+        <div className="card calc-card pop-in">
+          {state.loading && <div className="coin-spin">฿</div>}
+          <h2 className="stage-title">{msg}</h2>
+          {!state.loading && <button className="btn" onClick={() => (onRestart(), navigate('/'))}>เริ่มเล่นของฉัน ▶</button>}
+        </div>
+      }
+      right={<AvatarStage player={{ name: '', gender: 'f', look: { presetIndex: 0, expression: 'wow', pose: 'wave', variant: 0 } }} look="uni" scene="city" />}
+    />
+  )
+}
+
+function SharedView({ player, id, onRestart }) {
+  const tier = useMemo(() => computeResult(player).tierIndex, [player])
+  const restart = () => {
+    onRestart()
+    navigate('/')
+  }
+  return (
+    <Layout
+      hud={<Hud label="ผลลัพธ์ของเพื่อน" />}
+      left={<ResultPage player={player} shared savedId={id} onRestart={restart} />}
+      right={<AvatarStage player={player} look={lookForAge(player.age)} scene={TIER_SCENE[tier]} caption={`${player.name} · ${player.age} ปี`} />}
+    />
+  )
+}
+
+// ---- สถานะเกม ----
+function useGame() {
   const [player, setPlayer] = useState(freshPlayer)
   const [screen, setScreen] = useState('start') // start | stage | calc | result
   const [idx, setIdx] = useState(0)
   const [done, setDone] = useState({})
   const [levelUp, setLevelUp] = useState(0)
-
-  const age = Number(player.age)
-  const stages = useMemo(() => (age ? stagesForAge(age) : []), [age])
-  const running = stages.reduce((a, s) => a + (done[s.id] ? stageTotal(s, player.entries[s.id]) : 0), 0)
-
-  const restart = () => {
-    window.history.replaceState(null, '', window.location.pathname)
-    setShared(null)
+  const [savedId, setSavedId] = useState(null) // id ในฐานข้อมูล กันบันทึกซ้ำ
+  const restart = useCallback(() => {
+    setSavedId(null)
+    if (window.location.hash) window.history.replaceState(null, '', window.location.pathname)
     setPlayer(freshPlayer())
     setDone({})
     setIdx(0)
     setScreen('start')
-  }
+  }, [])
+  return { player, setPlayer, screen, setScreen, idx, setIdx, done, setDone, levelUp, setLevelUp, savedId, setSavedId, restart }
+}
 
-  const finishCalc = useCallback(() => {
-    saveHistory(player)
-    setScreen('result')
-  }, [player])
+function Game({ game }) {
+  const { player, setPlayer, screen, setScreen, idx, setIdx, done, setDone, levelUp, setLevelUp, savedId, setSavedId, restart } = game
+  const age = Number(player.age)
+  const stages = useMemo(() => (age ? stagesForAge(age) : []), [age])
+  const running = stages.reduce((a, s) => a + (done[s.id] ? stageTotal(s, player.entries[s.id]) : 0), 0)
+  const finishCalc = useCallback(() => setScreen('result'), [setScreen])
 
-  // ---- โหมดดูผลของเพื่อน ----
-  if (shared) {
-    return (
-      <Layout
-        hud={<Hud label="ผลลัพธ์ของเพื่อน" />}
-        left={<ResultPage player={shared} shared onRestart={restart} />}
-        right={<AvatarStage player={shared} look={lookForAge(shared.age)} caption={`${shared.name} · ${shared.age} ปี`} />}
-      />
-    )
-  }
-
-  // ---- ลุคตัวละครตามหน้าปัจจุบัน ----
+  // ---- ลุคตัวละครและฉากตามหน้าปัจจุบัน ----
   let look = lookForAge(age || 20)
   let caption = 'นี่คือคุณในตอนนี้!'
+  let scene = LOOK_SCENE[look]
   if (screen === 'stage') {
     const s = stages[idx]
     if (done[s.id]) look = stageLook(s, player.entries[s.id])
     else look = idx === 0 ? 'baby' : stageLook(stages[idx - 1], player.entries[stages[idx - 1].id])
+    scene = LOOK_SCENE[look]
     caption = done[s.id] ? 'โตขึ้นแล้ว! 🎉' : idx === 0 ? 'เริ่มต้นจากวัยทารก 👶' : 'กรอกเงินแล้วกดเสร็จสิ้นเพื่อโตขึ้น'
   } else if (screen !== 'start') {
     look = lookForAge(age)
+    scene = screen === 'result' ? TIER_SCENE[computeResult(player).tierIndex] : LOOK_SCENE[look]
     caption = screen === 'result' ? 'จบการผจญภัย 🏁' : 'กำลังนับเงิน...'
   }
 
@@ -115,7 +171,7 @@ function Game() {
   } else if (screen === 'calc') {
     left = <CalculatingPage onFinish={finishCalc} />
   } else {
-    left = <ResultPage player={player} onRestart={restart} />
+    left = <ResultPage player={player} savedId={savedId} onSaved={setSavedId} onRestart={restart} />
   }
 
   const hud =
@@ -131,46 +187,5 @@ function Game() {
       />
     )
 
-  return <Layout hud={hud} left={left} right={<AvatarStage player={player} look={look} levelUpKey={levelUp} caption={caption} />} />
-}
-
-function Layout({ hud, left, right }) {
-  return (
-    <div className="app">
-      {hud}
-      <main className="main">
-        <section className="left">{left}</section>
-        <aside className="right">{right}</aside>
-      </main>
-      <footer className="foot">Life Money Quest · ตัวเลขเป็นการประมาณเพื่อความสนุก</footer>
-    </div>
-  )
-}
-
-function Hud({ label, stages = [], idx = 0, done = {}, coins }) {
-  return (
-    <header className="hud">
-      <div className="logo">
-        <span className="logo-coin">฿</span>
-        <div>
-          <b>Life Money Quest</b>
-          <small>{label}</small>
-        </div>
-      </div>
-      {stages.length > 0 && (
-        <ol className="map" aria-label="ความคืบหน้า">
-          {stages.map((s, i) => (
-            <li key={s.id} className={`${done[s.id] ? 'done' : ''} ${i === idx ? 'cur' : ''}`} title={s.title}>
-              {s.emoji}
-            </li>
-          ))}
-        </ol>
-      )}
-      {coins !== undefined && (
-        <div className="coins" title="ยอดสะสมตอนนี้">
-          🪙 <b>{baht(coins)}</b>
-        </div>
-      )}
-    </header>
-  )
+  return <Layout hud={hud} left={left} right={<AvatarStage player={player} look={look} scene={scene} levelUpKey={levelUp} caption={caption} idPrefix="main-avatar" />} />
 }

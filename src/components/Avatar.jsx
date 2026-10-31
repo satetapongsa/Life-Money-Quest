@@ -26,7 +26,23 @@ const POSE_ANGLES = {
   point: [8, -92],
 }
 
-function Box({ x, y, w, h, c, d = D, line = true }) {
+// ท่าชั่วคราว (ดีใจ/ขยับเล่น) ทับท่าประจำตัว: [มุมแขนซ้าย, มุมแขนขวา, คลาสแขนซ้าย, คลาสแขนขวา]
+const ACTIONS = {
+  cheer: [155, -155, 'av-shake', 'av-shake'],
+  jump: [150, -150, '', ''],
+  spin: [80, -80, '', ''],
+  dance: [120, -60, 'av-dance-l', 'av-dance-r'],
+  fist: [10, -165, '', 'av-pump'],
+  victory: [8, -150, '', 'av-shake'],
+  flex: [100, -100, 'av-flex-l', 'av-flex-r'],
+  wave: [8, -150, '', 'av-wave'],
+  hop: [20, -20, '', ''],
+  look: [6, -6, '', ''],
+  stretch: [170, -170, '', ''],
+}
+
+export function Box({ x: x0, y: y0, w: w0, h: h0, c, d = D, line = true }) {
+  const [x, y, w, h] = [+x0, +y0, +w0, +h0]
   const top = `${x},${y} ${x + d},${y - d} ${x + w + d},${y - d} ${x + w},${y}`
   const side = `${x + w},${y} ${x + w + d},${y - d} ${x + w + d},${y + h - d} ${x + w},${y + h}`
   const stroke = line ? shade(c, -0.45) : 'none'
@@ -180,6 +196,71 @@ function hairParts(style, h, hc, ctx) {
       back.push(longBack(L * 0.9))
       front.push(cap(), fringe(14), <Box key="hl" x={x - 4} y={y + 2} w={8} h={hh * 0.8} c={hc} d={4} />, <Box key="hr" x={x + w - 4} y={y + 2} w={8} h={hh * 0.8} c={hc} d={4} />)
       break
+    // ---- v2: ทรงผมชาย ----
+    case 'afro':
+      back.push(<Box key="ab" x={x - 10} y={y - 14} w={w + 20} h={hh * 0.75} c={dark} />)
+      front.push(<Box key="at" x={x - 8} y={y - 20} w={w + 16} h={22} c={hc} />, fringe(4))
+      for (let i = 0; i < 5; i++) front.push(<rect key={'ad' + i} x={x - 4 + i * (w / 4)} y={y - 16 + (i % 2) * 6} width={4} height={4} fill={shade(hc, 0.25)} />)
+      break
+    case 'slick':
+      front.push(<Box key="sl" x={x - 2} y={y - 11} w={w + 4} h={15} c={hc} />, <polyline key="shine" points={`${x + 6},${y - 6} ${x + w * 0.5},${y - 8} ${x + w - 4},${y - 4}`} fill="none" stroke={shade(hc, 0.4)} strokeWidth="2" />, sideL(10), sideR(10))
+      break
+    case 'topknot':
+      front.push(<Box key="tb" x={x - 1} y={y - 4} w={w + 2} h={8} c={hc} />, <Box key="tk" x={x + w / 2 - 8} y={y - 22} w={16} h={14} c={hc} />, <Flat key="tkb" x={x + w / 2 - 8} y={y - 10} w={16} h={3} c={ctx.fav} />)
+      break
+    case 'longm':
+      back.push(<Box key="lmb" x={x - 5} y={y - 2} w={w + 10} h={hh + 8} c={dark} />)
+      front.push(cap(), <Flat key="lf1" x={x - 1} y={y + 4} w={w / 2 - 2} h={9} c={hc} />, <Flat key="lf2" x={x + w / 2 + 2} y={y + 4} w={w / 2 - 1} h={9} c={hc} />, sideL(hh * 0.9), sideR(hh * 0.9))
+      break
+    case 'beanie':
+      front.push(sideL(12), sideR(12), <Box key="bn" x={x - 4} y={y - 14} w={w + 8} h={20} c={ctx.fav} />, <Box key="bnf" x={x - 5} y={y + 1} w={w + 10} h={7} c={shade(ctx.fav, -0.18)} d={4} />, <Box key="pom" x={x + w / 2 - 5} y={y - 24} w={10} h={9} c="#f8f9fa" d={4} />)
+      break
+    case 'sporty':
+      front.push(cap(), fringe(5), sideL(12), sideR(12), <Flat key="hb" x={x - 3} y={y + 5} w={w + 6} h={5} c={ctx.fav} />)
+      break
+    case 'twoblock':
+      front.push(<Box key="tbs" x={x - 2} y={y - 2} w={w + 4} h={10} c={shade(hc, -0.35)} />, <Box key="tbt" x={x - 4} y={y - 12} w={w + 8} h={13} c={hc} />, <Flat key="tc1" x={x - 2} y={y + 1} w={w * 0.42} h={13} c={hc} />, <Flat key="tc2" x={x + w * 0.58} y={y + 1} w={w * 0.42 + 2} h={13} c={hc} />)
+      break
+    case 'flattop':
+      front.push(<Box key="ft" x={x - 1} y={y - 20} w={w + 2} h={24} c={hc} />, <Flat key="ftl" x={x} y={y - 6} w={w} h={2} c={shade(hc, 0.2)} />, sideL(8), sideR(8))
+      break
+    // ---- v2: ทรงผมหญิง ----
+    case 'spacebuns':
+      front.push(<Box key="sb1" x={x - 6} y={y - 20} w={16} h={14} c={hc} />, <Box key="sb2" x={x + w - 10} y={y - 20} w={16} h={14} c={hc} />, cap(), fringe(9), sideL(14), sideR(14))
+      break
+    case 'highpony':
+      back.push(<Box key="hp" x={x + w - 2} y={y - 10} w={13} h={hh * 0.45 + L * 0.55} c={dark} />)
+      front.push(<Box key="hpt" x={x + w / 2 + 4} y={y - 22} w={13} h={14} c={hc} />, cap(), fringe(7), sideL(10), sideR(10), <Box key="hpb" x={x + w / 2 + 3} y={y - 10} w={15} h={5} c={ctx.fav} d={3} />)
+      break
+    case 'shortcurly':
+      for (let i = 0; i < 6; i++) front.push(<Box key={'scl' + i} x={x - 8 + (i % 2) * 3} y={y - 4 + i * (hh * 0.13)} w={10} h={hh * 0.14 + 1} c={i % 2 ? hc : shade(hc, 0.12)} d={3} />, <Box key={'scr' + i} x={x + w - 2 - (i % 2) * 3} y={y - 4 + i * (hh * 0.13)} w={10} h={hh * 0.14 + 1} c={i % 2 ? shade(hc, 0.12) : hc} d={3} />)
+      front.push(cap(4))
+      for (let i = 0; i < 5; i++) front.push(<Box key={'sct' + i} x={x - 4 + i * (w / 4.2)} y={y - 16 + (i % 2) * 3} w={12} h={10} c={i % 2 ? hc : shade(hc, 0.12)} d={4} />)
+      front.push(fringe(7))
+      break
+    case 'beret':
+      back.push(longBack(L * 0.35))
+      front.push(cap(), fringe(9), sideL(hh * 0.7), sideR(hh * 0.7), <Box key="br" x={x - 8} y={y - 16} w={w + 10} h={11} c={ctx.fav} />, <Box key="brs" x={x + w / 2 - 2} y={y - 22} w={4} h={6} c={shade(ctx.fav, -0.2)} d={2} />)
+      break
+    case 'sidebraid':
+      front.push(cap(), <Flat key="sbf" x={x - 1} y={y + 4} w={w * 0.7} h={10} c={hc} />, sideL(12))
+      for (let i = 0; i < 5; i++) front.push(<Box key={'sbd' + i} x={x + w - 6 + (i % 2) * 2} y={y + 4 + i * ((hh * 0.6 + L * 0.4) / 5)} w={10} h={(hh * 0.6 + L * 0.4) / 5 + 1} c={i % 2 ? hc : shade(hc, 0.15)} d={3} />)
+      front.push(<Box key="sbt" x={x + w - 4} y={y + 4 + hh * 0.6 + L * 0.4} w={8} h={5} c={ctx.fav} d={3} />)
+      break
+    case 'curtain':
+      back.push(longBack(L * 0.7))
+      front.push(cap(), <polygon key="cu1" points={`${x - 1},${y + 4} ${x + w / 2 - 1},${y + 4} ${x - 1},${y + 18}`} fill={hc} />, <polygon key="cu2" points={`${x + w + 1},${y + 4} ${x + w / 2 + 1},${y + 4} ${x + w + 1},${y + 18}`} fill={hc} />, sideL(hh + L * 0.3), sideR(hh + L * 0.3))
+      break
+    case 'flowercrown':
+      back.push(longBack(L * 0.6))
+      front.push(cap(), fringe(8), sideL(hh * 0.9), sideR(hh * 0.9))
+      ;['#ff8fab', '#ffd43b', '#ffffff', '#ff8fab', '#b197fc'].forEach((fc, i) => front.push(<Box key={'fl' + i} x={x - 4 + i * (w / 4.4)} y={y - 12 + (i % 2) * 2} w={9} h={8} c={fc} d={3} />))
+      break
+    case 'catears':
+      front.push(<polygon key="ce1" points={`${x + 2},${y - 6} ${x + 8},${y - 24} ${x + 18},${y - 6}`} fill={ctx.fav} stroke={shade(ctx.fav, -0.45)} />, <polygon key="ce2" points={`${x + w - 18},${y - 6} ${x + w - 8},${y - 24} ${x + w - 2},${y - 6}`} fill={ctx.fav} stroke={shade(ctx.fav, -0.45)} />)
+      front.push(<polygon key="ci1" points={`${x + 6},${y - 7} ${x + 8},${y - 17} ${x + 14},${y - 7}`} fill="#ffc9de" />, <polygon key="ci2" points={`${x + w - 14},${y - 7} ${x + w - 8},${y - 17} ${x + w - 6},${y - 7}`} fill="#ffc9de" />)
+      front.push(cap(2), fringe(10), sideL(hh * 0.8), sideR(hh * 0.8))
+      break
     default:
       front.push(cap(), fringe(6))
   }
@@ -197,7 +278,7 @@ function Bow({ x, y, c }) {
 }
 
 // ---------------- หน้า ----------------
-function Face({ h, expr, acc, skin, look }) {
+function Face({ h, expr, acc, skin, look, hairColor, gender }) {
   const { x, y, w, h: hh } = h
   const s = w / 56
   const cx = x + w / 2
@@ -296,6 +377,29 @@ function Face({ h, expr, acc, skin, look }) {
           <line x1={cx - ex + 7 * s} y1={ey - 2 * s} x2={cx + ex - 7 * s} y2={ey - 2 * s} />
         </g>
       )}
+      {acc === 'sunglasses' && look !== 'baby' && (
+        <g>
+          <rect x={cx - ex - 8 * s} y={ey - 6 * s} width={16 * s} height={10 * s} rx={2} fill="#141420" />
+          <rect x={cx + ex - 8 * s} y={ey - 6 * s} width={16 * s} height={10 * s} rx={2} fill="#141420" />
+          <rect x={cx - ex + 8 * s} y={ey - 4 * s} width={2 * ex - 16 * s} height={2.5 * s} fill="#141420" />
+          <rect x={cx - ex - 5 * s} y={ey - 4 * s} width={4 * s} height={2 * s} fill="#ffffff" opacity="0.7" />
+          <rect x={cx + ex - 5 * s} y={ey - 4 * s} width={4 * s} height={2 * s} fill="#ffffff" opacity="0.7" />
+        </g>
+      )}
+      {acc === 'heart' && <path d={`M${cx + ex + 3 * s},${ey + 8 * s} l${3 * s},${-3 * s} l${3 * s},${3 * s} l${-3 * s},${4 * s}z M${cx + ex + 3 * s},${ey + 8 * s} l${-3 * s},${-3 * s} l${-3 * s},${3 * s} l${3 * s},${4 * s}z`} fill="#ff4d79" />}
+      {acc === 'star' && <polygon points={star(cx - ex - 4 * s, ey + 10 * s, 4.5 * s)} fill="#ffd43b" stroke="#c99a00" strokeWidth="0.8" />}
+      {acc === 'earrings' && look !== 'baby' && (
+        <g fill="#f2c94c" stroke="#a4801f" strokeWidth="0.8">
+          <rect x={x - 3} y={y + hh * 0.66} width={4} height={4} />
+          <rect x={x + w + 3} y={y + hh * 0.66 - 3} width={4} height={4} />
+        </g>
+      )}
+      {acc === 'beard' && gender === 'm' && ['uni', 'work', 'senior'].includes(look) && (
+        <path d={`M${x},${y + hh * 0.6} h${w} v${hh * 0.4} h${-w}z M${cx - 8 * s},${my - 4 * s} h${16 * s} v${7 * s} h${-16 * s}z`} fill={hairColor} fillRule="evenodd" opacity="0.92" />
+      )}
+      {acc === 'mustache' && gender === 'm' && ['work', 'senior'].includes(look) && (
+        <path d={`M${cx - 9 * s},${my - 3 * s} h${18 * s} v${3 * s} h${-4 * s} l${-5 * s},${-1.5 * s} l${-5 * s},${1.5 * s} h${-4 * s}z`} fill={hairColor} />
+      )}
       {mouth}
     </g>
   )
@@ -310,7 +414,10 @@ export function avatarGeometry(look) {
   return { b, legTop, torsoTop, headTop }
 }
 
-export default function Avatar({ gender, look, presetIndex, expression, pose, variant = 0, name, className = '' }) {
+// หน้าตอนทำท่าดีใจ
+const CHEER_FACE = { id: 'grin', eyes: 'happy', mouth: 'grin' }
+
+export default function Avatar({ gender, look, presetIndex, expression, pose, variant = 0, name, action = null, className = '' }) {
   const p = getPreset(gender, presetIndex)
   const expr = EXPRESSIONS.find((e) => e.id === expression) ?? EXPRESSIONS[0]
   const { b, legTop, torsoTop, headTop } = avatarGeometry(look)
@@ -394,7 +501,8 @@ export default function Avatar({ gender, look, presetIndex, expression, pose, va
   if (ex.includes('bib')) torsoParts.push(<rect key="bib" x={CX - tw * 0.3} y={torsoTop + 1} width={tw * 0.6} height={th * 0.6} rx={6} fill="#fff" stroke="#e1d5e7" />)
 
   // ---- แขน ----
-  const [angL, angR] = POSE_ANGLES[pose] ?? POSE_ANGLES.idle
+  const act = ACTIONS[action]
+  const [angL, angR] = act ? act : POSE_ANGLES[pose] ?? POSE_ANGLES.idle
   const sleeveLen = o.sleeve === 'long' ? ah - 8 : ah * 0.38
   const sleeveColor = o.shirt
   const arm = (side) => {
@@ -402,13 +510,18 @@ export default function Avatar({ gender, look, presetIndex, expression, pose, va
     const sx = side < 0 ? tx : tx + tw
     const sy = torsoTop + 4
     const angle = side < 0 ? angL : angR
-    const animClass = side > 0 && pose === 'wave' ? 'av-wave' : pose === 'idle' ? (side < 0 ? 'av-swing-l' : 'av-swing-r') : ''
+    const animClass = act
+      ? act[side < 0 ? 2 : 3]
+      : side > 0 && pose === 'wave' ? 'av-wave' : pose === 'idle' ? (side < 0 ? 'av-swing-l' : 'av-swing-r') : ''
+    const origin = `${sx}px ${sy}px`
     return (
-      <g key={side} transform={`rotate(${angle} ${sx} ${sy})`}>
-        <g className={animClass} style={{ transformOrigin: `${sx}px ${sy}px` }}>
+      <g key={side} className="av-arm" style={{ transform: `rotate(${angle}deg)`, transformOrigin: origin }}>
+        <g className={animClass} style={{ transformOrigin: origin }}>
           <Box x={ax} y={torsoTop + 2} w={aw} h={ah} c={skin} d={5} />
           <Box x={ax} y={torsoTop + 2} w={aw} h={sleeveLen} c={sleeveColor} d={5} />
-          {pose === 'point' && side > 0 && <Box x={ax + aw / 2 - 2} y={torsoTop + ah} w={4} h={8} c={skin} d={3} />}
+          {side > 0 && (act ? action === 'victory' : pose === 'point') && (
+            <Box x={ax + aw / 2 - 2} y={torsoTop + ah} w={4} h={8} c={skin} d={3} />
+          )}
         </g>
       </g>
     )
@@ -425,23 +538,36 @@ export default function Avatar({ gender, look, presetIndex, expression, pose, va
     ? <polygon points={star(head.x + hw - 12, head.y + 6, 6)} fill="#ffd43b" stroke="#c99a00" />
     : p.acc === 'bow' && look !== 'baby' && p.hair !== 'twintails'
       ? <Bow x={head.x + hw - 18} y={head.y - 12} c={p.fav} />
-      : null
+      : p.acc === 'headphones' && look !== 'baby'
+        ? (
+          <g>
+            <path d={`M${head.x - 4},${head.y + hh * 0.42} V${head.y - 12} H${head.x + hw + 6} V${head.y + hh * 0.42}`} fill="none" stroke="#2b2b35" strokeWidth="4" strokeLinejoin="round" />
+            <Box x={head.x - 9} y={head.y + hh * 0.3} w={8} h={16} c={p.fav} d={3} />
+            <Box x={head.x + hw + 2} y={head.y + hh * 0.3} w={8} h={16} c={p.fav} d={3} />
+          </g>
+        )
+        : null
 
+  const headPivot = `${CX}px ${head.y + hh}px`
   return (
-    <svg className={`avatar ${className}`} viewBox="0 0 220 280" role="img" aria-label={`ตัวละครของ ${name || 'ผู้เล่น'}`}>
-      <ellipse cx={CX + 4} cy={G + 4} rx={tw * 0.75 + 6} ry={7} fill="rgba(20,10,40,0.22)" />
-      <g className="av-body">
-        {hair.back}
-        {arm(-1)}
-        {legs}
-        {skirt}
-        {torsoParts}
-        {arm(1)}
-        <Box x={head.x} y={head.y} w={hw} h={hh} c={skin} />
-        <Face h={head} expr={expr} acc={p.acc} skin={skin} look={look} />
-        {hair.front}
-        {accFront}
-        {pacifier}
+    <svg className={`avatar ${className}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 280" role="img" aria-label={`ตัวละครของ ${name || 'ผู้เล่น'}`}>
+      <ellipse className="av-shadow" cx={CX + 4} cy={G + 4} rx={tw * 0.75 + 6} ry={7} fill="rgba(20,10,40,0.22)" />
+      <g className={`av-act ${action ? 'act-' + action : ''}`} style={{ transformOrigin: `${CX}px ${G}px` }}>
+        <g className="av-body">
+          {hair.back}
+          {arm(-1)}
+          {legs}
+          {skirt}
+          {torsoParts}
+          {arm(1)}
+          <g className={`av-head ${action === 'look' ? 'head-look' : ''}`} style={{ transformOrigin: headPivot }}>
+            <Box x={head.x} y={head.y} w={hw} h={hh} c={skin} />
+            <Face h={head} expr={action && action !== 'look' ? CHEER_FACE : expr} acc={p.acc} skin={skin} look={look} hairColor={hairColor} gender={gender} />
+            {hair.front}
+            {accFront}
+            {pacifier}
+          </g>
+        </g>
       </g>
     </svg>
   )

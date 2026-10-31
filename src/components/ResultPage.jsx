@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { computeResult, baht, bahtShort } from '../lib/calc'
 import { TIERS, COMPARISONS } from '../data/tiers'
-import { FREQS, SCHOOL_DAYS } from '../data/stages'
-import { shareUrl } from '../lib/share'
+import { FREQS, SCHOOL_DAYS, lookForAge } from '../data/stages'
+import { shareUrl, saveHistory, SITE_URL } from '../lib/share'
+import { savePlayer } from '../lib/api'
+import { navigate } from '../lib/router'
+import { TIER_SCENE } from './Scene'
+
+// กันบันทึกซ้ำตอน React StrictMode เรียก effect สองรอบ
+const saving = new WeakMap()
 
 function useCountUp(target, ms = 1400) {
   const [v, setV] = useState(0)
@@ -30,10 +36,33 @@ function entryText(stage, entry) {
   return `${baht(entry.amount)} ${FREQS[entry.freq].unit}${entry.mode === 'work' ? ' · ทำงาน' : ''}`
 }
 
-export default function ResultPage({ player, shared, onRestart }) {
+export default function ResultPage({ player, shared, savedId, onSaved, onRestart }) {
   const r = useMemo(() => computeResult(player), [player])
   const shown = useCountUp(r.total)
   const [toast, setToast] = useState('')
+  const [saveState, setSaveState] = useState(savedId ? 'saved' : shared ? 'none' : 'saving')
+  const [imgBusy, setImgBusy] = useState(false)
+
+  // บันทึกผลลงฐานข้อมูลครั้งเดียว (ถ้าไม่สำเร็จ ลิงก์แชร์จะใช้แบบเก็บข้อมูลในลิงก์แทน)
+  useEffect(() => {
+    if (shared || savedId) return
+    let alive = true
+    if (!saving.has(player)) saving.set(player, savePlayer(player, player.isPublic !== false))
+    saving
+      .get(player)
+      .then(({ id }) => {
+        saveHistory(player, id)
+        onSaved?.(id)
+        if (alive) setSaveState('saved')
+      })
+      .catch(() => {
+        saveHistory(player)
+        if (alive) setSaveState('failed')
+      })
+    return () => {
+      alive = false
+    }
+  }, [player, shared, savedId, onSaved])
   const title = tierTitle(r.tier, player.gender)
   const max = Math.max(...r.rows.map((x) => x.total), 1)
   const times = r.ratio.toLocaleString('th-TH', { maximumFractionDigits: 2 })
@@ -45,9 +74,11 @@ export default function ResultPage({ player, shared, onRestart }) {
     setTimeout(() => setToast(''), 2200)
   }
 
+  const link = shareUrl(player, savedId)
+  const text = `${player.name} มีเงินไหลผ่านชีวิตมาแล้ว ${baht(r.total)} บาท! ได้ระดับ "${title}" ${r.tier.emoji}\nมาลองเล่นดูว่าของคุณเท่าไหร่ 👉`
+
   const share = async () => {
-    const url = shareUrl(player)
-    const text = `${player.name} มีเงินไหลผ่านชีวิตมาแล้ว ${baht(r.total)} บาท! ได้ระดับ "${title}" ${r.tier.emoji}\nมาลองเล่นดูว่าของคุณเท่าไหร่ 👉`
+    const url = link
     if (navigator.share) {
       try {
         await navigator.share({ title: 'Life Money Quest', text, url })
@@ -68,7 +99,37 @@ export default function ResultPage({ player, shared, onRestart }) {
     }
   }
 
-  const inviteUrl = window.location.href.split('#')[0]
+  const inviteUrl = window.location.origin.startsWith('http://localhost') ? window.location.origin : SITE_URL
+
+  // สร้างรูปการ์ดสรุปผล แล้วแชร์รูป (มือถือ) หรือดาวน์โหลด
+  const cardFile = async () => {
+    const { makeResultCard } = await import('../lib/cardImage')
+    const blob = await makeResultCard({ player, result: r, tierTitle: title, sceneId: TIER_SCENE[r.tierIndex], look: lookForAge(player.age) })
+    return new File([blob], `life-money-quest-${player.name}.png`, { type: 'image/png' })
+  }
+  const withImage = async (fn) => {
+    if (imgBusy) return
+    setImgBusy(true)
+    try {
+      await fn(await cardFile())
+    } catch (err) {
+      if (err?.name !== 'AbortError') flash('สร้างรูปไม่สำเร็จ ลองใหม่อีกครั้งนะ')
+    } finally {
+      setImgBusy(false)
+    }
+  }
+  const download = () =>
+    withImage(async (file) => {
+      const url = URL.createObjectURL(file)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = file.name
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(url), 2000)
+      flash('ดาวน์โหลดรูปแล้ว!')
+    })
+  const shareImage = () => withImage((file) => navigator.share({ files: [file], text: `${text} ${link}` }))
+  const canShareFiles = typeof navigator.canShare === 'function' && navigator.canShare({ files: [new File([''], 'x.png', { type: 'image/png' })] })
 
   return (
     <div className="result pop-in">
@@ -176,13 +237,26 @@ export default function ResultPage({ player, shared, onRestart }) {
 
       <div className="card share-card">
         <h3 className="sec">📣 แชร์ให้เพื่อนเล่นต่อ</h3>
+        {!shared && (
+          <p className={`save-status ${saveState}`}>
+            {saveState === 'saving' && '⏳ กำลังบันทึกผล...'}
+            {saveState === 'saved' && (player.isPublic !== false ? '✅ บันทึกแล้ว · ชื่อคุณขึ้นลีดเดอร์บอร์ดแล้ว' : '✅ บันทึกแล้ว · ไม่แสดงในลีดเดอร์บอร์ด')}
+            {saveState === 'failed' && '⚠️ บันทึกออนไลน์ไม่สำเร็จ ยังแชร์ได้ด้วยลิงก์สำรอง'}
+          </p>
+        )}
+        <div className="link-box">
+          <input readOnly value={link} aria-label="ลิงก์ผลลัพธ์" onFocus={(e) => e.target.select()} />
+          <button className="btn small yellow" onClick={() => copy(link, 'คัดลอกลิงก์ผลลัพธ์แล้ว!')} disabled={saveState === 'saving'}>คัดลอก</button>
+        </div>
         <div className="actions wrap">
-          <button className="btn big" onClick={share}>แชร์ผลลัพธ์ 🔗</button>
-          <button className="btn yellow" onClick={() => copy(shareUrl(player), 'คัดลอกลิงก์ผลลัพธ์แล้ว!')}>คัดลอกลิงก์ผลลัพธ์</button>
+          <button className="btn big" onClick={share} disabled={saveState === 'saving'}>แชร์ผลลัพธ์ 🔗</button>
+          <button className="btn green" onClick={download} disabled={imgBusy}>{imgBusy ? 'กำลังสร้างรูป...' : '🖼️ ดาวน์โหลดรูป'}</button>
+          {canShareFiles && <button className="btn yellow" onClick={shareImage} disabled={imgBusy}>📲 แชร์รูป</button>}
           <button className="btn ghost" onClick={() => copy(inviteUrl, 'คัดลอกลิงก์ชวนเพื่อนแล้ว!')}>ชวนเพื่อนมาเล่น</button>
+          <button className="btn ghost" onClick={() => navigate('/leaderboard')}>🏆 ดูลีดเดอร์บอร์ด</button>
           <button className="btn ghost" onClick={onRestart}>🔄 เล่นใหม่</button>
         </div>
-        <p className="note">ลิงก์ผลลัพธ์จะพาเพื่อนมาดูตัวละครและผลของคุณได้ทันที</p>
+        <p className="note">ลิงก์จะเปิดหน้าการ์ดตัวละครและผลสรุปนี้ให้เพื่อนดูได้ทันที</p>
       </div>
 
       {toast && <div className="toast">{toast}</div>}

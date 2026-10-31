@@ -14,7 +14,7 @@ export default function StartPage({ player, setPlayer, onStart }) {
     setPlayer({ ...player, gender: g, look: randomLook(g) })
   }
   const step = (dir) => {
-    const i = (player.look.presetIndex + dir + list.length) % list.length
+    const i = (player.look.presetIndex + dir + list.length) % list.length // วนครบเพศละ 30 แบบ
     setPlayer({ ...player, look: randomLook(player.gender, i) })
   }
 
@@ -81,6 +81,11 @@ export default function StartPage({ player, setPlayer, onStart }) {
         </button>
       </div>
       <p className="note">ตัวละครจะถูกล็อกเมื่อเริ่มเกม แล้วจะค่อยๆ โตขึ้นตามช่วงวัยที่คุณกรอก</p>
+
+      <label className="check">
+        <input type="checkbox" checked={player.isPublic !== false} onChange={(e) => setPlayer({ ...player, isPublic: e.target.checked })} />
+        <span>🏆 แสดงชื่อและผลของฉันในลีดเดอร์บอร์ด <small>(ไม่ติ๊ก = เห็นได้เฉพาะคนที่มีลิงก์)</small></span>
+      </label>
 
       <div className="actions">
         <button className="btn big" disabled={!valid} onClick={onStart}>

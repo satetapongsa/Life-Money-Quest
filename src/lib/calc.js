@@ -1,5 +1,5 @@
-import { stagesForAge, stageTotal, typicalEntry } from '../data/stages'
-import { tierFor, tierIndex, badgesFor, TIERS } from '../data/tiers'
+import { stagesForAge, stageTotal, typicalEntry } from '../data/stages.js'
+import { tierFor, tierIndex, badgesFor, TIERS } from '../data/tiers.js'
 
 const SCHOOL_IDS = ['kinder', 'primary', 'middle', 'high']
 
