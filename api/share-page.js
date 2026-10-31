@@ -39,3 +39,9 @@ export async function GET(request) {
     return fallback
   }
 }
+
+// บอทพรีวิวลิงก์บางตัวเช็กด้วย HEAD ก่อน
+export async function HEAD(request) {
+  const res = await GET(request)
+  return new Response(null, { status: res.status, headers: res.headers })
+}
