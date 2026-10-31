@@ -24,8 +24,21 @@ await sql`
     app_version text,
     created_at  timestamptz not null default now()
   )`
-await sql`create index if not exists players_board on players (tier, total desc) where is_public`
 await sql`create index if not exists players_rate on players (ip_hash, created_at)`
+
+// v2.1: ตัวเลขเกินจริง (flagged), ซ่อนโดยผู้ดูแล/การรายงาน (hidden)
+await sql`alter table players add column if not exists flagged boolean not null default false`
+await sql`alter table players add column if not exists hidden boolean not null default false`
+await sql`drop index if exists players_board`
+await sql`create index if not exists players_board2 on players (tier, total desc) where is_public and not flagged and not hidden`
+await sql`
+  create table if not exists reports (
+    player_id  text not null references players(id) on delete cascade,
+    ip_hash    text not null,
+    created_at timestamptz not null default now(),
+    primary key (player_id, ip_hash)
+  )`
+await sql`create index if not exists reports_rate on reports (ip_hash, created_at)`
 
 const [{ version }] = await sql`select version()`
 const [{ count }] = await sql`select count(*)::int as count from players`

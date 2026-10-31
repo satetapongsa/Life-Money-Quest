@@ -64,6 +64,7 @@ export function publicRow(r) {
     entries: r.entries,
     total: Number(r.total),
     tier: r.tier,
+    flagged: !!r.flagged,
     createdAt: r.created_at,
   }
 }

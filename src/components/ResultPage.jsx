@@ -3,7 +3,8 @@ import { computeResult, baht, bahtShort } from '../lib/calc'
 import { TIERS, COMPARISONS } from '../data/tiers'
 import { FREQS, SCHOOL_DAYS, lookForAge } from '../data/stages'
 import { shareUrl, saveHistory, SITE_URL } from '../lib/share'
-import { savePlayer } from '../lib/api'
+import { savePlayer, reportPlayer } from '../lib/api'
+import { unrealisticStages } from '../lib/fairness'
 import { navigate } from '../lib/router'
 import { TIER_SCENE } from './Scene'
 
@@ -38,6 +39,17 @@ function entryText(stage, entry) {
 
 export default function ResultPage({ player, shared, savedId, onSaved, onRestart }) {
   const r = useMemo(() => computeResult(player), [player])
+  const flagged = useMemo(() => unrealisticStages(r.rows.map((x) => x.stage), player.entries).length > 0, [r, player])
+  const [reported, setReported] = useState(false)
+  const report = async () => {
+    if (!window.confirm(`รายงานผลของ "${player.name}" ว่าไม่เหมาะสม?\nถ้ามีคนรายงานครบ 3 คน ผลนี้จะถูกซ่อน`)) return
+    try {
+      await reportPlayer(savedId)
+      setReported(true)
+    } catch {
+      flash('ส่งรายงานไม่สำเร็จ ลองใหม่อีกครั้งนะ')
+    }
+  }
   const shown = useCountUp(r.total)
   const [toast, setToast] = useState('')
   const [saveState, setSaveState] = useState(savedId ? 'saved' : shared ? 'none' : 'saving')
@@ -144,6 +156,7 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
         <div className="badge-row">
           <span className="chip">GAME CLEAR 🏁</span>
           <span className="chip ghost">{player.name} · {player.age} ปี</span>
+          {flagged && <span className="chip warn-chip" title="มีตัวเลขบางช่วงสูงเกินจริง">⚠️ ตัวเลขเกินจริง</span>}
         </div>
         <p className="hero-label">เงินที่ไหลผ่านชีวิต{shared ? `ของ ${player.name}` : 'คุณ'}ทั้งหมด</p>
         <div className="total">
@@ -240,7 +253,12 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
         {!shared && (
           <p className={`save-status ${saveState}`}>
             {saveState === 'saving' && '⏳ กำลังบันทึกผล...'}
-            {saveState === 'saved' && (player.isPublic !== false ? '✅ บันทึกแล้ว · ชื่อคุณขึ้นลีดเดอร์บอร์ดแล้ว' : '✅ บันทึกแล้ว · ไม่แสดงในลีดเดอร์บอร์ด')}
+            {saveState === 'saved' &&
+              (flagged
+                ? '✅ บันทึกแล้ว · แต่ตัวเลขบางช่วงสูงเกินจริง จึงไม่ขึ้นลีดเดอร์บอร์ด (ยังแชร์ลิงก์ได้ปกติ)'
+                : player.isPublic !== false
+                  ? '✅ บันทึกแล้ว · ชื่อคุณขึ้นลีดเดอร์บอร์ดแล้ว'
+                  : '✅ บันทึกแล้ว · ไม่แสดงในลีดเดอร์บอร์ด')}
             {saveState === 'failed' && '⚠️ บันทึกออนไลน์ไม่สำเร็จ ยังแชร์ได้ด้วยลิงก์สำรอง'}
           </p>
         )}
@@ -257,6 +275,11 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
           <button className="btn ghost" onClick={onRestart}>🔄 เล่นใหม่</button>
         </div>
         <p className="note">ลิงก์จะเปิดหน้าการ์ดตัวละครและผลสรุปนี้ให้เพื่อนดูได้ทันที</p>
+        {shared && savedId && (
+          <button className="link-btn" onClick={report} disabled={reported}>
+            {reported ? '🚩 แจ้งแล้ว ขอบคุณนะ' : '🚩 รายงานชื่อหรือผลที่ไม่เหมาะสม'}
+          </button>
+        )}
       </div>
 
       {toast && <div className="toast">{toast}</div>}

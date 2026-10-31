@@ -11,9 +11,9 @@ export async function GET(request) {
     const sql = db()
     const [rows, counts] = await Promise.all([
       tier === null
-        ? sql`select id, name, age, gender, look, total, tier, created_at from players where is_public order by total desc, created_at asc limit ${LIMIT}`
-        : sql`select id, name, age, gender, look, total, tier, created_at from players where is_public and tier = ${tier} order by total desc, created_at asc limit ${LIMIT}`,
-      sql`select tier, count(*)::int as n from players where is_public group by tier`,
+        ? sql`select id, name, age, gender, look, total, tier, created_at from players where is_public and not flagged and not hidden order by total desc, created_at asc limit ${LIMIT}`
+        : sql`select id, name, age, gender, look, total, tier, created_at from players where is_public and not flagged and not hidden and tier = ${tier} order by total desc, created_at asc limit ${LIMIT}`,
+      sql`select tier, count(*)::int as n from players where is_public and not flagged and not hidden group by tier`,
     ])
     const byTier = Array(10).fill(0)
     for (const c of counts) byTier[c.tier] = c.n

@@ -11,7 +11,7 @@ export async function GET(request) {
   if (!isId(id)) return fallback
   try {
     const [rows, page] = await Promise.all([
-      db()`select name, age, total, tier from players where id = ${id}`,
+      db()`select name, age, total, tier from players where id = ${id} and not hidden`,
       fetch(new URL('/index.html', url.origin)).then((r) => (r.ok ? r.text() : null)),
     ])
     if (!rows.length || !page) return fallback

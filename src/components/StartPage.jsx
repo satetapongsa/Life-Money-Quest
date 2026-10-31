@@ -1,9 +1,11 @@
 import { PRESETS, randomLook } from '../data/avatars'
 import { MIN_AGE, MAX_AGE } from '../data/stages'
+import { nameProblem, NAME_PROBLEM_TEXT } from '../lib/moderation'
 
 export default function StartPage({ player, setPlayer, onStart }) {
   const ageNum = Number(player.age)
-  const valid = player.name.trim() && Number.isInteger(ageNum) && ageNum >= MIN_AGE && ageNum <= MAX_AGE
+  const badName = nameProblem(player.name)
+  const valid = player.name.trim() && !badName && Number.isInteger(ageNum) && ageNum >= MIN_AGE && ageNum <= MAX_AGE
   const setGender = (g) => {
     if (g === player.gender) return
     setPlayer({ ...player, gender: g, look: randomLook(g) })
@@ -36,7 +38,9 @@ export default function StartPage({ player, setPlayer, onStart }) {
           maxLength={16}
           placeholder="เช่น ต้นข้าว"
           onChange={(e) => setPlayer({ ...player, name: e.target.value })}
+          aria-invalid={!!badName}
         />
+        {badName && <small className="warn">🚫 {NAME_PROBLEM_TEXT[badName]}</small>}
       </label>
 
       <div className="field-row">
@@ -60,7 +64,7 @@ export default function StartPage({ player, setPlayer, onStart }) {
           </div>
         </div>
       </div>
-      {player.age !== '' && !valid && player.name.trim() && (
+      {player.age !== '' && !valid && player.name.trim() && !badName && (
         <p className="warn">อายุต้องอยู่ระหว่าง {MIN_AGE}–{MAX_AGE} ปี</p>
       )}
 

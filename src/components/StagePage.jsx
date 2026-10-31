@@ -1,5 +1,6 @@
 import { FREQS, SCHOOL_DAYS, yearlyAmount } from '../data/stages'
 import { baht } from '../lib/calc'
+import { isUnrealistic, limitText } from '../lib/fairness'
 
 const MAX_AMOUNT = 100_000_000 // ต้องตรงกับขีดจำกัดใน lib/share.js
 
@@ -74,6 +75,11 @@ export default function StagePage({ stage, index, count, entry, setEntry, done, 
         ))}
       </div>
 
+      {filled && isUnrealistic(stage, e) && (
+        <p className="warn-box">
+          🤔 สูงเกินจริงไปหน่อยนะ (เกิน {limitText(stage)}) — เล่นต่อได้ แต่ผลนี้จะ<b>ไม่ขึ้นลีดเดอร์บอร์ด</b>
+        </p>
+      )}
       <div className={`calc-line ${filled ? '' : 'dim'}`}>
         {filled ? (
           <>

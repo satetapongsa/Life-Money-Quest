@@ -48,14 +48,18 @@ function SharedResult({ id, onRestart }) {
     let alive = true
     fetchPlayer(id)
       .then((p) => alive && setState({ player: p, loading: false }))
-      .catch(() => alive && setState({ loading: false, error: true }))
+      .catch((err) => alive && setState({ loading: false, error: err.status === 410 ? 'hidden' : 'missing' }))
     return () => {
       alive = false
     }
   }, [id])
 
   if (state.player) return <SharedView player={state.player} id={id} onRestart={onRestart} />
-  const msg = state.loading ? 'กำลังโหลดการ์ดของเพื่อน...' : 'ไม่พบผลลัพธ์นี้ ลิงก์อาจไม่ถูกต้อง'
+  const msg = state.loading
+    ? 'กำลังโหลดการ์ดของเพื่อน...'
+    : state.error === 'hidden'
+      ? 'ผลนี้ถูกซ่อนแล้ว เพราะถูกรายงานว่าไม่เหมาะสม'
+      : 'ไม่พบผลลัพธ์นี้ ลิงก์อาจไม่ถูกต้อง'
   return (
     <Layout
       hud={<Hud label="ผลลัพธ์ของเพื่อน" />}

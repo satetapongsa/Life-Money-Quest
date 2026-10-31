@@ -3,6 +3,8 @@
 import { db, json, fail, serverError, ipHash, newId, isId, publicRow } from './_lib/db.js'
 import { fromRecord } from '../src/lib/record.js'
 import { computeResult } from '../src/lib/calc.js'
+import { nameProblem } from '../src/lib/moderation.js'
+import { unrealisticStages } from '../src/lib/fairness.js'
 import { APP_VERSION } from '../src/data/versions.js'
 
 const MAX_BODY = 8_000
@@ -14,6 +16,7 @@ export async function GET(request) {
   try {
     const rows = await db()`select * from players where id = ${id}`
     if (!rows.length) return fail(404, 'not found')
+    if (rows[0].hidden) return fail(410, 'hidden')
     return json(publicRow(rows[0]), 200, { 'cache-control': 'public, s-maxage=300, stale-while-revalidate=600' })
   } catch (err) {
     return serverError('GET /api/player', err)
@@ -33,10 +36,12 @@ export async function POST(request) {
   }
   const player = fromRecord(body?.record)
   if (!player) return fail(400, 'invalid record')
+  if (nameProblem(player.name)) return fail(400, 'name not allowed', 'name_not_allowed')
   const isPublic = body?.isPublic !== false
 
   // คำนวณยอด/ระดับใหม่ที่เซิร์ฟเวอร์ ไม่เชื่อตัวเลขจากเครื่องผู้เล่น
   const r = computeResult(player)
+  const flagged = unrealisticStages(r.rows.map((x) => x.stage), player.entries).length > 0
   const sql = db()
   const hash = ipHash(request)
   try {
@@ -45,11 +50,11 @@ export async function POST(request) {
 
     const id = newId()
     await sql`
-      insert into players (id, name, age, gender, look, entries, total, ratio, tier, is_public, ip_hash, app_version)
+      insert into players (id, name, age, gender, look, entries, total, ratio, tier, is_public, flagged, ip_hash, app_version)
       values (${id}, ${player.name}, ${player.age}, ${player.gender}, ${JSON.stringify(player.look)}::jsonb,
               ${JSON.stringify(player.entries)}::jsonb, ${Math.round(r.total)}, ${r.ratio}, ${r.tierIndex},
-              ${isPublic}, ${hash}, ${APP_VERSION})`
-    return json({ id, tier: r.tierIndex, total: Math.round(r.total) }, 201)
+              ${isPublic}, ${flagged}, ${hash}, ${APP_VERSION})`
+    return json({ id, tier: r.tierIndex, total: Math.round(r.total), flagged }, 201)
   } catch (err) {
     return serverError('POST /api/player', err)
   }
