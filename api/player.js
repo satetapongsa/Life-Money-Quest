@@ -1,6 +1,6 @@
 // GET /api/player?id=XXXXXXXXXX  → ผลของผู้เล่นหนึ่งคน (สำหรับลิงก์แชร์)
 // POST /api/player                → บันทึกผลใหม่ คืน { id }
-import { db, json, fail, ipHash, newId, isId, publicRow } from './_lib/db.js'
+import { db, json, fail, serverError, ipHash, newId, isId, publicRow } from './_lib/db.js'
 import { fromRecord } from '../src/lib/record.js'
 import { computeResult } from '../src/lib/calc.js'
 import { APP_VERSION } from '../src/data/versions.js'
@@ -16,8 +16,7 @@ export async function GET(request) {
     if (!rows.length) return fail(404, 'not found')
     return json(publicRow(rows[0]), 200, { 'cache-control': 'public, s-maxage=300, stale-while-revalidate=600' })
   } catch (err) {
-    console.error('GET /api/player', err)
-    return fail(500, 'server error')
+    return serverError('GET /api/player', err)
   }
 }
 
@@ -52,7 +51,6 @@ export async function POST(request) {
               ${isPublic}, ${hash}, ${APP_VERSION})`
     return json({ id, tier: r.tierIndex, total: Math.round(r.total) }, 201)
   } catch (err) {
-    console.error('POST /api/player', err)
-    return fail(500, 'server error')
+    return serverError('POST /api/player', err)
   }
 }

@@ -2,10 +2,15 @@
 import { neon } from '@neondatabase/serverless'
 import { createHash, randomBytes } from 'node:crypto'
 
+// กันพลาดตอนวางค่าใน Vercel: ช่องว่าง, เครื่องหมายคำพูด, หรือวาง "DATABASE_URL=..." มาทั้งบรรทัด
+const databaseUrl = () =>
+  (process.env.DATABASE_URL || '').trim().replace(/^DATABASE_URL=/, '').replace(/^(['"])(.*)\1$/, '$2').trim()
+
 let client
 export function db() {
-  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not configured')
-  client ??= neon(process.env.DATABASE_URL)
+  const url = databaseUrl()
+  if (!url) throw new Error('DATABASE_URL is not configured')
+  client ??= neon(url)
   return client
 }
 
@@ -16,7 +21,24 @@ export function json(data, status = 200, headers = {}) {
   })
 }
 
-export const fail = (status, error) => json({ error }, status)
+export const fail = (status, error, code) => json(code ? { error, code } : { error }, status)
+
+// ระบุประเภทปัญหาฐานข้อมูลแบบไม่เปิดเผยค่าลับ เพื่อให้ตรวจการตั้งค่าบน Vercel ได้
+export function dbErrorCode(err) {
+  const msg = String(err?.message || '')
+  const url = databaseUrl()
+  if (!url) return 'db_not_configured'
+  if (!/^postgres(ql)?:\/\//.test(url)) return 'db_url_invalid'
+  if (/password authentication failed|authentication/i.test(msg)) return 'db_auth_failed'
+  if (/relation .* does not exist/i.test(msg)) return 'db_not_migrated'
+  if (/fetch failed|ENOTFOUND|ECONNREFUSED|timeout/i.test(msg)) return 'db_unreachable'
+  return 'db_error'
+}
+
+export const serverError = (where, err) => {
+  console.error(where, err)
+  return fail(500, 'server error', dbErrorCode(err))
+}
 
 // เก็บแค่ค่าแฮชของ IP เพื่อจำกัดความถี่ ไม่เก็บ IP จริง
 export function ipHash(request) {

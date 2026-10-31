@@ -1,5 +1,5 @@
 // GET /api/leaderboard?tier=0..9  → อันดับในระดับฐานะนั้น (ไม่ใส่ tier = อันดับรวม) + จำนวนคนในแต่ละระดับ
-import { db, json, fail, publicRow } from './_lib/db.js'
+import { db, json, fail, serverError, publicRow } from './_lib/db.js'
 
 const LIMIT = 50
 
@@ -23,7 +23,6 @@ export async function GET(request) {
       { 'cache-control': 'public, s-maxage=20, stale-while-revalidate=60' },
     )
   } catch (err) {
-    console.error('GET /api/leaderboard', err)
-    return fail(500, 'server error')
+    return serverError('GET /api/leaderboard', err)
   }
 }
