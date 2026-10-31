@@ -110,13 +110,6 @@ input { font-family: inherit; }
 .seg button.on small { color: #e6dcff; }
 .seg button:not(.on):hover { background: #f1ecfb; }
 
-.picker {
-  display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 14px;
-  border: 3px dashed #b9a8d9; background: #f8f4ff; flex-wrap: wrap;
-}
-.picker-info { flex: 1; min-width: 140px; text-align: center; }
-.picker-info strong { font-family: 'Mitr'; font-size: 20px; display: block; }
-.picker-info small { color: var(--ink-soft); }
 .icon-btn {
   width: 44px; height: 44px; border-radius: 12px; border: 3px solid var(--line); background: #fff;
   box-shadow: 0 3px 0 var(--line); font-size: 16px;
@@ -514,3 +507,4 @@ a.logo { color: inherit; text-decoration: none; }
   .stage-caption { left: 14px; transform: none; font-size: 12px; }
   .amt small { display: none; }
 }
+.btn.reroll { width: 100%; font-size: 18px; padding: 14px; }

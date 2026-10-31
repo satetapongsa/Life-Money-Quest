@@ -1,20 +1,17 @@
-import { PRESETS, randomLook, EXPRESSIONS, POSES } from '../data/avatars'
+import { PRESETS, randomLook } from '../data/avatars'
 import { MIN_AGE, MAX_AGE } from '../data/stages'
 
 export default function StartPage({ player, setPlayer, onStart }) {
   const ageNum = Number(player.age)
   const valid = player.name.trim() && Number.isInteger(ageNum) && ageNum >= MIN_AGE && ageNum <= MAX_AGE
-  const list = PRESETS[player.gender]
-  const preset = list[player.look.presetIndex]
-  const expr = EXPRESSIONS.find((e) => e.id === player.look.expression)
-  const pose = POSES.find((p) => p.id === player.look.pose)
-
   const setGender = (g) => {
     if (g === player.gender) return
     setPlayer({ ...player, gender: g, look: randomLook(g) })
   }
-  const step = (dir) => {
-    const i = (player.look.presetIndex + dir + list.length) % list.length // วนครบเพศละ 30 แบบ
+  // สุ่มจากเพศละ 30 แบบ โดยไม่ซ้ำตัวเดิม
+  const reroll = () => {
+    const n = PRESETS[player.gender].length
+    const i = (player.look.presetIndex + 1 + Math.floor(Math.random() * (n - 1))) % n
     setPlayer({ ...player, look: randomLook(player.gender, i) })
   }
 
@@ -67,19 +64,9 @@ export default function StartPage({ player, setPlayer, onStart }) {
         <p className="warn">อายุต้องอยู่ระหว่าง {MIN_AGE}–{MAX_AGE} ปี</p>
       )}
 
-      <div className="picker">
-        <button className="icon-btn" onClick={() => step(-1)} aria-label="ตัวก่อนหน้า">◀</button>
-        <div className="picker-info">
-          <strong>{preset.label}</strong>
-          <small>
-            แบบที่ {player.look.presetIndex + 1}/{list.length} · {expr?.label} · {pose?.label}
-          </small>
-        </div>
-        <button className="icon-btn" onClick={() => step(1)} aria-label="ตัวถัดไป">▶</button>
-        <button className="btn small yellow" onClick={() => setPlayer({ ...player, look: randomLook(player.gender) })}>
-          🎲 สุ่มใหม่
-        </button>
-      </div>
+      <button className="btn yellow reroll" onClick={reroll}>
+        🎲 สุ่มตัวละครใหม่
+      </button>
       <p className="note">ตัวละครจะถูกล็อกเมื่อเริ่มเกม แล้วจะค่อยๆ โตขึ้นตามช่วงวัยที่คุณกรอก</p>
 
       <label className="check">
