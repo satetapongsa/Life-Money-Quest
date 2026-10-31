@@ -5,10 +5,12 @@ import StagePage from './components/StagePage'
 import CalculatingPage from './components/CalculatingPage'
 import ResultPage from './components/ResultPage'
 import Leaderboard from './components/Leaderboard'
+import AdminPage from './components/AdminPage'
 import Gallery from './components/Gallery'
 import { Layout, Hud } from './components/Shell'
 import { LOOK_SCENE, TIER_SCENE } from './components/Scene'
 import { randomLook } from './data/avatars'
+import { itemForTier } from './data/items'
 import { stagesForAge, lookForAge, stageTotal } from './data/stages'
 import { computeResult } from './lib/calc'
 import { readSharedFromHash } from './lib/share'
@@ -23,7 +25,7 @@ const freshPlayer = () => {
 const stageLook = (stage, entry) => (stage.altMode && entry?.mode === 'work' ? stage.altMode.look : stage.look)
 
 export default function App() {
-  if (import.meta.env.DEV && window.location.hash === '#gallery') return <Gallery />
+  if (import.meta.env.DEV && window.location.hash.startsWith('#gallery')) return <Gallery />
   return <Router />
 }
 
@@ -34,6 +36,7 @@ function Router() {
   const [hashShared] = useState(readSharedFromHash)
 
   if (route.name === 'leaderboard') return <Leaderboard />
+  if (route.name === 'admin') return <AdminPage />
   if (route.name === 'result') return <SharedResult key={route.id} id={route.id} onRestart={game.restart} />
   if (hashShared && game.screen === 'start' && window.location.hash) {
     return <SharedView player={hashShared} onRestart={game.restart} />
@@ -85,7 +88,7 @@ function SharedView({ player, id, onRestart }) {
     <Layout
       hud={<Hud label="ผลลัพธ์ของเพื่อน" />}
       left={<ResultPage player={player} shared savedId={id} onRestart={restart} />}
-      right={<AvatarStage player={player} look={lookForAge(player.age)} scene={TIER_SCENE[tier]} caption={`${player.name} · ${player.age} ปี`} />}
+      right={<AvatarStage player={player} look={lookForAge(player.age)} scene={TIER_SCENE[tier]} item={itemForTier(tier)} caption={`${player.name} · ${player.age} ปี`} />}
     />
   )
 }
@@ -115,6 +118,16 @@ function Game({ game }) {
   const stages = useMemo(() => (age ? stagesForAge(age) : []), [age])
   const running = stages.reduce((a, s) => a + (done[s.id] ? stageTotal(s, player.entries[s.id]) : 0), 0)
   const finishCalc = useCallback(() => setScreen('result'), [setScreen])
+  // ดูตัวเองในอนาคตจากการ์ดทำนายอนาคต (เฉพาะหน้าสรุปผล)
+  const [futureLook, setFutureLook] = useState(null)
+  const [itemEquipped, setItemEquipped] = useState(true)
+  useEffect(() => {
+    if (screen !== 'result') setFutureLook(null)
+  }, [screen])
+  const previewLook = useCallback((l) => {
+    setFutureLook(l)
+    setLevelUp((n) => n + 1)
+  }, [setLevelUp])
 
   // ---- ลุคตัวละครและฉากตามหน้าปัจจุบัน ----
   let look = lookForAge(age || 20)
@@ -127,9 +140,9 @@ function Game({ game }) {
     scene = LOOK_SCENE[look]
     caption = done[s.id] ? 'โตขึ้นแล้ว! 🎉' : idx === 0 ? 'เริ่มต้นจากวัยทารก 👶' : 'กรอกเงินแล้วกดเสร็จสิ้นเพื่อโตขึ้น'
   } else if (screen !== 'start') {
-    look = lookForAge(age)
+    look = (screen === 'result' && futureLook) || lookForAge(age)
     scene = screen === 'result' ? TIER_SCENE[computeResult(player).tierIndex] : LOOK_SCENE[look]
-    caption = screen === 'result' ? 'จบการผจญภัย 🏁' : 'กำลังนับเงิน...'
+    caption = screen === 'result' ? (futureLook ? 'ตัวคุณในอนาคต 🔮' : 'จบการผจญภัย 🏁') : 'กำลังนับเงิน...'
   }
 
   const setEntry = (id, entry) => setPlayer((p) => ({ ...p, entries: { ...p.entries, [id]: entry } }))
@@ -175,7 +188,7 @@ function Game({ game }) {
   } else if (screen === 'calc') {
     left = <CalculatingPage onFinish={finishCalc} />
   } else {
-    left = <ResultPage player={player} savedId={savedId} onSaved={setSavedId} onRestart={restart} />
+    left = <ResultPage player={player} savedId={savedId} onSaved={setSavedId} onRestart={restart} onPreviewLook={previewLook} itemEquipped={itemEquipped} onEquip={setItemEquipped} />
   }
 
   const hud =
@@ -191,5 +204,5 @@ function Game({ game }) {
       />
     )
 
-  return <Layout hud={hud} left={left} right={<AvatarStage player={player} look={look} scene={scene} levelUpKey={levelUp} caption={caption} idPrefix="main-avatar" />} />
+  return <Layout hud={hud} left={left} right={<AvatarStage player={player} look={look} scene={scene} levelUpKey={levelUp} caption={caption} item={screen === 'result' && itemEquipped ? itemForTier(computeResult(player).tierIndex) : null} idPrefix="main-avatar" />} />
 }

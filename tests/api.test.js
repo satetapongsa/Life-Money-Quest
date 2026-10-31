@@ -135,3 +135,39 @@ describe('GET /api/stats', () => {
     expect(body).toEqual({ players: 5, avgAge: 28, medianTotal: 1234567, daily: [{ day: '2026-11-01', n: 5 }], tiers: [0, 0, 0, 0, 3, 0, 0, 0, 0, 0] })
   })
 })
+
+describe('POST /api/admin', async () => {
+  process.env.ADMIN_PASSWORD = 'test-admin-password'
+  const admin = await import('../api/admin.js')
+  const login = async (password) => post(admin, { action: 'login', password }, { 'x-real-ip': '1.2.3.4' })
+  it('รหัสถูก → ได้ token, รหัสผิด → 401', async () => {
+    db.replies = [[{ n: 0 }], []]
+    const ok = await login('test-admin-password')
+    expect(ok.status).toBe(200)
+    expect((await ok.json()).token).toMatch(/^\d+\.[\w-]+$/)
+    db.replies = [[{ n: 0 }], []]
+    expect((await login('nope')).status).toBe(401)
+  })
+  it('ผิดเกิน 5 ครั้ง → 429 แม้รหัสถูก', async () => {
+    db.replies = [[{ n: 5 }]]
+    expect((await login('test-admin-password')).status).toBe(429)
+  })
+  it('ไม่มี token หรือ token ปลอม → 401', async () => {
+    expect((await post(admin, { action: 'list' })).status).toBe(401)
+    expect((await post(admin, { action: 'list' }, { authorization: `Bearer ${Date.now() + 9e6}.forged` })).status).toBe(401)
+  })
+  it('token หมดอายุใช้ไม่ได้ และเปลี่ยนรหัสแล้ว token เดิมใช้ไม่ได้', async () => {
+    db.replies = [[{ n: 0 }], []]
+    const { token } = await (await login('test-admin-password')).json()
+    db.replies = [[], [{ total: 0, reported: 0, hidden: 0 }]]
+    expect((await post(admin, { action: 'list' }, { authorization: `Bearer ${token}` })).status).toBe(200)
+    process.env.ADMIN_PASSWORD = 'changed'
+    expect((await post(admin, { action: 'list' }, { authorization: `Bearer ${token}` })).status).toBe(401)
+    process.env.ADMIN_PASSWORD = 'test-admin-password'
+  })
+  it('ปิดใช้งานเมื่อไม่ได้ตั้งรหัส', async () => {
+    process.env.ADMIN_PASSWORD = ''
+    expect((await login('x')).status).toBe(503)
+    process.env.ADMIN_PASSWORD = 'test-admin-password'
+  })
+})

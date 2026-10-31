@@ -45,7 +45,7 @@ export function Hud({ label, stages = [], idx = 0, done = {}, coins, page = 'hom
           </div>
         )}
         {page !== 'leaderboard' && (
-          <button className="btn small yellow" onClick={() => navigate('/leaderboard')}>🏆 อันดับ</button>
+          <button className="btn small yellow" onClick={() => navigate('/leaderboard')} aria-label="อันดับ">🏆 <span className="hide-xs">อันดับ</span></button>
         )}
         <MuteButton />
         <VersionBadge />

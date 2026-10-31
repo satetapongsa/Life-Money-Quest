@@ -1,4 +1,5 @@
 import { toRecord, fromRecord } from './record.js'
+import { computeResult } from './calc.js'
 
 const MAX_CODE = 4000
 export const SITE_URL = 'https://lifemoneyquest.vercel.app'
@@ -56,6 +57,16 @@ export const ownerTokenFor = (id) => (id && readHistory().find((r) => r.id === i
 export function forgetHistory(id) {
   writeHistory(readHistory().filter((r) => r.id !== id))
 }
+// ระดับฐานะที่เคยเล่นได้ในเครื่องนี้ (ปลดล็อกไอเทมสะสม)
+export function historyTiers() {
+  const tiers = new Set()
+  for (const r of readHistory()) {
+    const p = fromRecord(r)
+    if (p) tiers.add(computeResult(p).tierIndex)
+  }
+  return tiers
+}
+
 // ผลล่าสุดของฉัน (ใช้เทียบกับเพื่อน)
 export function latestOwnResult() {
   const r = readHistory()[0]

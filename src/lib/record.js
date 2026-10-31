@@ -44,6 +44,9 @@ export function fromRecord(r) {
     entries[s.id] = s.kind === 'school'
       ? { amount: String(amount), days: oneOf(e.days, Object.keys(SCHOOL_DAYS), 'school') }
       : { amount: String(amount), freq: oneOf(e.freq, Object.keys(FREQS), 'month'), mode: oneOf(e.mode, ['study', 'work'], 'study') }
+    // % ที่เก็บออมได้ในช่วงนั้น (v2.3) — ไม่มีหรือผิดรูปแบบ = ไม่ได้ระบุ
+    const save = Number(e.save)
+    if (e.save !== undefined && e.save !== '' && Number.isFinite(save) && save >= 0 && save <= 100) entries[s.id].save = Math.round(save)
   }
   return { name, age, gender, look, entries, createdAt: Number.isFinite(r.t) ? r.t : 0 }
 }

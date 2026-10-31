@@ -13,14 +13,15 @@ npm run db:migrate           # สร้างตาราง players (รัน
 npm run dev                  # http://localhost:5173  (API /api/* รันในตัว, ดูตัวละครทั้งหมดที่ /#gallery)
 npm run build && npm run preview   # ทดสอบ build จริง + security headers + API แบบ Node ล้วน
 npm test                     # ชุดทดสอบสูตรคำนวณ การกรองชื่อ และ API (ฐานข้อมูลจำลอง)
-npm run mod -- list          # เครื่องมือผู้ดูแล: list | reported | hide <id> | unhide <id>
+npm run mod -- list          # เครื่องมือผู้ดูแลแบบคำสั่ง (หรือใช้หน้าเว็บ /admin)
 ```
 
 แก้ `server/og-card.jsx` (รูปพรีวิวลิงก์) หรือ Avatar/Scene แล้วให้รัน `npm run build:og` และ commit `api/_gen/og-card.js` ด้วย
 
 ## Deploy (Vercel)
 
-1. Project Settings → Environment Variables เพิ่ม `DATABASE_URL` และ `IP_HASH_SALT` (ค่าสุ่มยาวๆ)
+1. Project Settings → Environment Variables เพิ่ม `DATABASE_URL`, `IP_HASH_SALT` (ค่าสุ่มยาวๆ)
+   และ `ADMIN_PASSWORD` (รหัสเข้าหน้า `/admin` — ไม่ตั้ง = ปิดหน้าผู้ดูแล)
    และเปิด Analytics → Web Analytics เพื่อดูจำนวนผู้เข้าชม
 2. Push ขึ้น GitHub — Vercel build ด้วย `vercel.json` (Vite + ฟังก์ชันในโฟลเดอร์ `api/`)
 
@@ -30,6 +31,8 @@ npm run mod -- list          # เครื่องมือผู้ดูแ�
 | --- | --- |
 | API (Vercel Functions) | `api/player.js` (บันทึก/อ่านผล), `api/leaderboard.js` (ระดับ + ช่วงอายุ), `api/share-page.js` (ลิงก์ `/r/:id` พร้อมพรีวิว), `api/og.js` (รูปพรีวิว), `api/manage.js` (เจ้าของซ่อน/ลบ), `api/report.js`, `api/stats.js` |
 | ตรวจชื่อ / ตัวเลขเกินจริง | `src/lib/moderation.js`, `src/lib/fairness.js` |
+| เงินออม / ทำนายอนาคต / ไอเทม | `src/lib/savings.js`, `src/data/items.js` |
+| ผู้ดูแล | `api/admin.js`, `src/components/AdminPage.jsx` |
 | ตรวจข้อมูล/คำนวณ (ใช้ร่วมเว็บ+API) | `src/lib/record.js`, `src/lib/calc.js` |
 | ตัวละคร / ฉาก | `src/components/Avatar.jsx`, `src/components/Scene.jsx`, `src/data/avatars.js` |
 | ประวัติเวอร์ชัน | `src/data/versions.js` (เพิ่มรายการใหม่ทุกครั้งที่อัปเดตใหญ่) |
@@ -44,4 +47,5 @@ npm run mod -- list          # เครื่องมือผู้ดูแ�
 - หน้า `/r/:id` escape ชื่อผู้เล่นก่อนใส่ใน HTML
 - เจ้าของผลได้กุญแจลับตอนบันทึก (เก็บในเบราว์เซอร์) ฐานข้อมูลเก็บแค่ค่าแฮชไว้ตรวจตอนซ่อน/ลบ
 - ชื่อที่หยาบ/โฆษณาถูกปฏิเสธ ตัวเลขเกินจริงไม่ขึ้นลีดเดอร์บอร์ด และรายงานครบ 3 คนซ่อนอัตโนมัติ
+- หน้าผู้ดูแล: session ลงลายเซ็น HMAC อายุ 8 ชม. (เปลี่ยนรหัสแล้วหลุดทันที), ผิดเกิน 5 ครั้ง/15 นาทีถูกล็อก, ไม่ให้ search engine เก็บ
 - Security headers (CSP, X-Frame-Options, nosniff ฯลฯ) ตั้งใน `vercel.json`

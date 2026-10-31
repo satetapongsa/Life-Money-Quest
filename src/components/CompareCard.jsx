@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import Avatar from './Avatar'
 import { computeResult, baht, bahtShort } from '../lib/calc'
 import { lookForAge } from '../data/stages'
+import { itemForTier } from '../data/items'
 
 // การ์ดเทียบผลสองคนแบบคู่กัน
 export default function CompareCard({ me, friend }) {
@@ -21,7 +22,7 @@ export default function CompareCard({ me, friend }) {
     <div className="cmp-side">
       <small className="cmp-label">{label}</small>
       <div className="cmp-avatar">
-        <Avatar gender={p.gender} look={lookForAge(p.age)} presetIndex={p.look.presetIndex} expression={p.look.expression} pose={p.look.pose} variant={p.look.variant} name={p.name} className="static" />
+        <Avatar gender={p.gender} look={lookForAge(p.age)} presetIndex={p.look.presetIndex} expression={p.look.expression} pose={p.look.pose} variant={p.look.variant} name={p.name} item={itemForTier(r.tierIndex)} className="static" />
       </div>
       <b className="cmp-name">{p.name}</b>
       <small>{p.age} ปี</small>

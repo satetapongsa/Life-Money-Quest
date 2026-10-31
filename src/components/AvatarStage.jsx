@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import Avatar, { avatarGeometry } from './Avatar'
 import Scene, { SCENE_INFO } from './Scene'
 import { CELEBRATIONS, FIDGETS } from '../data/avatars'
+import { HAT_ITEMS } from '../data/items'
 import { pick } from '../lib/color'
 import { sfx } from '../lib/sound'
 
@@ -21,7 +22,7 @@ const SWAP_MS = 520 // เปลี่ยนร่างตอนแสงสว
 const CELEBRATE_MS = 2200
 
 // ฉากด้านขวา: พื้นหลัง + ตัวละคร + ป้ายชื่อ + เอฟเฟกต์แปลงร่าง
-export default function AvatarStage({ player, look, scene, levelUpKey, caption, idPrefix = 'stage-avatar' }) {
+export default function AvatarStage({ player, look, scene, levelUpKey, caption, item = null, idPrefix = 'stage-avatar' }) {
   const [shownLook, setShownLook] = useState(look)
   const [phase, setPhase] = useState('idle') // idle | morph | celebrate
   const [action, setAction] = useState(null)
@@ -85,7 +86,7 @@ export default function AvatarStage({ player, look, scene, levelUpKey, caption, 
   }
 
   const { headTop } = avatarGeometry(shownLook)
-  const tagTop = ((headTop - 40) / 280) * 100
+  const tagTop = ((headTop - (HAT_ITEMS.includes(item) ? 52 : 40)) / 280) * 100
   const info = SCENE_INFO[scene] ?? SCENE_INFO.home
 
   return (
@@ -125,6 +126,7 @@ export default function AvatarStage({ player, look, scene, levelUpKey, caption, 
           variant={player.look.variant}
           name={player.name}
           action={action}
+          item={item}
           className={idPrefix}
         />
       </div>

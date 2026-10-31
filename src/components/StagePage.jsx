@@ -1,6 +1,7 @@
 import { FREQS, SCHOOL_DAYS, yearlyAmount } from '../data/stages'
 import { baht } from '../lib/calc'
 import { isUnrealistic, limitText } from '../lib/fairness'
+import { SAVE_CHOICES } from '../lib/savings'
 
 const MAX_AMOUNT = 100_000_000 // ต้องตรงกับขีดจำกัดใน lib/share.js
 
@@ -73,6 +74,25 @@ export default function StagePage({ stage, index, count, entry, setEntry, done, 
             {baht(p)}
           </button>
         ))}
+      </div>
+
+      <div className="save-box">
+        <span className="save-q">🐷 ช่วงนี้เก็บออมได้ประมาณกี่ %?</span>
+        <div className="chips">
+          {SAVE_CHOICES.map((p) => (
+            <button key={p} className={`pill ${Number(e.save ?? -1) === p ? 'on' : ''}`} onClick={() => update({ save: p })}>
+              {p === 0 ? 'ไม่ได้เก็บ' : `${p}%`}
+            </button>
+          ))}
+          <label className="pct-input">
+            <input type="number" inputMode="numeric" min="0" max="100" placeholder="อื่นๆ" value={SAVE_CHOICES.includes(Number(e.save)) || e.save === undefined ? '' : e.save}
+              onChange={(ev) => update({ save: ev.target.value === '' ? undefined : Math.min(100, Math.max(0, Number(ev.target.value))) })} />
+            %
+          </label>
+        </div>
+        {filled && Number(e.save) > 0 && (
+          <small className="note">เก็บได้ราว <b>{baht((perYear * stage.years * e.save) / 100)}</b> บาท ใช้ไป {baht((perYear * stage.years * (100 - e.save)) / 100)} บาท</small>
+        )}
       </div>
 
       {filled && isUnrealistic(stage, e) && (

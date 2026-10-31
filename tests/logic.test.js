@@ -113,3 +113,47 @@ describe('ตัวเลขเกินจริง', () => {
     expect(unrealisticStages(st, { uni: { amount: '20000', freq: 'day' } })).toEqual(['uni'])
   })
 })
+
+describe('เงินออม (v2.3)', async () => {
+  const { savingsSummary, projectFuture } = await import('../src/lib/savings.js')
+  const p = player(30, { kinder: { amount: '20', days: 'school', save: 10 }, work1: { amount: '20000', freq: 'month', save: 20 } })
+  it('แยกใช้ไป/เก็บได้ถูกต้อง', () => {
+    const s = savingsSummary(p, 2026)
+    expect(s.total).toBe(12_000 + 1_920_000)
+    expect(s.saved).toBeCloseTo(1_200 + 384_000)
+    expect(s.spent + s.saved).toBeCloseTo(s.total)
+    expect(s.answered).toBe(true)
+  })
+  it('ลงทุนโตมากกว่าฝากธนาคาร มากกว่าเก็บกระปุก', () => {
+    const g = savingsSummary(p, 2026).grown
+    expect(g.keep).toBeCloseTo(385_200)
+    expect(g.bank).toBeGreaterThan(g.keep)
+    expect(g.invest).toBeGreaterThan(g.bank)
+  })
+  it('ไม่ได้ตอบเรื่องออม = answered false', () => {
+    expect(savingsSummary(player(30, { kinder: { amount: '20', days: 'school' } })).answered).toBe(false)
+  })
+  it('fromRecord รับ save 0–100 และทิ้งค่าผิด', () => {
+    const r = fromRecord({ v: 1, n: 'a', a: 30, g: 'm', l: {}, e: { kinder: { amount: '20', save: 150 }, work1: { amount: '1', save: '25' } } })
+    expect(r.entries.kinder.save).toBeUndefined()
+    expect(r.entries.work1.save).toBe(25)
+  })
+  it('ทำนายอนาคตถึงอายุ 60 ด้วยรายได้ล่าสุด + ขึ้นเงินเดือน', () => {
+    const flat = projectFuture(p, 60, 0)
+    expect(flat.years).toBe(30)
+    // 30–59: 30 ปี × 240,000 (อายุ 60 ขึ้นไปไม่นับเพราะเป้าหมายคือ 60)
+    expect(flat.futureFlow).toBe(30 * 240_000)
+    expect(projectFuture(p, 60, 3).futureFlow).toBeGreaterThan(flat.futureFlow)
+    expect(projectFuture(p, 30, 3)).toBeNull()
+  })
+})
+
+describe('ไอเทมประจำระดับ (v2.3)', async () => {
+  const { TIER_ITEMS, itemForTier } = await import('../src/data/items.js')
+  it('มีไอเทมครบ 10 ระดับ ไม่ซ้ำกัน', () => {
+    expect(TIER_ITEMS).toHaveLength(10)
+    expect(new Set(TIER_ITEMS.map((i) => i.id)).size).toBe(10)
+    expect(itemForTier(9)).toBe('crown')
+    expect(itemForTier(99)).toBeNull()
+  })
+})

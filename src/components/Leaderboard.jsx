@@ -7,6 +7,7 @@ import { TIERS } from '../data/tiers'
 import { lookForAge } from '../data/stages'
 import { fetchLeaderboard, fetchStats } from '../lib/api'
 import { AGE_BANDS } from '../data/ageBands'
+import { itemForTier } from '../data/items'
 import { baht, bahtShort } from '../lib/calc'
 import { navigate } from '../lib/router'
 
@@ -87,7 +88,7 @@ export default function Leaderboard() {
             <button className="board-row" onClick={() => navigate(`/r/${p.id}`)}>
               <span className={`rank r${i + 1}`}>{i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span>
               <span className="mini">
-                <Avatar gender={p.gender} look={lookForAge(p.age)} presetIndex={p.look.presetIndex} expression={p.look.expression} pose="idle" variant={p.look.variant} name={p.name} className="static" />
+                <Avatar gender={p.gender} look={lookForAge(p.age)} presetIndex={p.look.presetIndex} expression={p.look.expression} pose="idle" variant={p.look.variant} name={p.name} item={itemForTier(p.tier)} className="static" />
               </span>
               <span className="who">
                 <b>{p.name}</b>
@@ -110,6 +111,7 @@ export default function Leaderboard() {
       player={{ name: champ.name, gender: champ.gender, look: champ.look }}
       look={lookForAge(champ.age)}
       scene={TIER_SCENE[sceneTier]}
+      item={itemForTier(champ.tier)}
       caption={`👑 อันดับ 1 · ${bahtShort(champ.total)} บาท`}
     />
   ) : (

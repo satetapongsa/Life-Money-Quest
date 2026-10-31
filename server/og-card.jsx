@@ -10,10 +10,10 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 // ใส่ตำแหน่ง/ขนาดให้ <svg> ที่ render ออกมา เพื่อซ้อนเป็น svg ลูก
 const place = (markup, x, y, w, h) => markup.replace('<svg ', `<svg x="${x}" y="${y}" width="${w}" height="${h}" `)
 
-export function renderCardSvg({ name, age, gender, look, total, tierTitle, tierColor, sceneId, ageLook, site }) {
+export function renderCardSvg({ name, age, gender, look, total, tierTitle, tierColor, sceneId, ageLook, site, item = null }) {
   const scene = renderToStaticMarkup(createElement(Scene, { id: sceneId }))
   const avatar = renderToStaticMarkup(
-    createElement(Avatar, { gender, look: ageLook, presetIndex: look.presetIndex, expression: look.expression, pose: 'idle', variant: look.variant, name }),
+    createElement(Avatar, { gender, look: ageLook, presetIndex: look.presetIndex, expression: look.expression, pose: 'idle', variant: look.variant, name, item }),
   )
   // ป้ายชื่อเหนือหัวตัวละคร
   const ax = 70, ay = 110, aw = 400, ah = 509

@@ -1,5 +1,6 @@
 import { stagesForAge, stageTotal, typicalEntry, yearlyAmount } from '../data/stages.js'
 import { inflationFactor } from '../data/inflation.js'
+import { savingsSummary } from './savings.js'
 import { tierFor, tierIndex, badgesFor, TIERS } from '../data/tiers.js'
 
 const SCHOOL_IDS = ['kinder', 'primary', 'middle', 'high']
@@ -26,6 +27,18 @@ export function computeResult(player) {
 
   const tier = tierFor(ratio)
   const daysLived = player.age * 365
+  const savings = savingsSummary(player)
+  const badges = badgesFor({
+    childRatio,
+    adultRatio,
+    peakStage: peak && peak.total > 0 ? peak.stage : null,
+    total,
+    age: player.age,
+    hasAdult: adultRows.length > 0,
+    uniMode: player.entries.uni?.mode,
+  })
+  if (savings.answered && savings.pct >= 50) badges.unshift({ emoji: '🏦', title: 'เซียนการออม', desc: 'เก็บได้ครึ่งหนึ่งของเงินที่ผ่านมือ' })
+  else if (savings.answered && savings.pct >= 25) badges.unshift({ emoji: '🐷', title: 'นักออมตัวยง', desc: 'เก็บออมได้เกินหนึ่งในสี่' })
   return {
     rows,
     total,
@@ -35,15 +48,7 @@ export function computeResult(player) {
     tierIndex: tierIndex(ratio),
     tierCount: TIERS.length,
     perDay: daysLived ? total / daysLived : 0,
-    badges: badgesFor({
-      childRatio,
-      adultRatio,
-      peakStage: peak && peak.total > 0 ? peak.stage : null,
-      total,
-      age: player.age,
-      hasAdult: adultRows.length > 0,
-      uniMode: player.entries.uni?.mode,
-    }),
+    badges,
   }
 }
 

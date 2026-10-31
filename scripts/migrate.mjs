@@ -44,6 +44,15 @@ await sql`create index if not exists reports_rate on reports (ip_hash, created_a
 await sql`alter table players add column if not exists owner_hash text`
 await sql`create index if not exists players_age on players (age) where is_public and not flagged and not hidden`
 
+// v2.3: บันทึกการล็อกอินผู้ดูแล (กันเดารหัสผ่าน)
+await sql`
+  create table if not exists admin_logins (
+    ip_hash    text not null,
+    ok         boolean not null,
+    created_at timestamptz not null default now()
+  )`
+await sql`create index if not exists admin_logins_rate on admin_logins (ip_hash, created_at)`
+
 const [{ version }] = await sql`select version()`
 const [{ count }] = await sql`select count(*)::int as count from players`
 console.log(`OK · ${version.split(' on ')[0]} · players: ${count}`)

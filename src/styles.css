@@ -415,7 +415,7 @@ input { font-family: inherit; }
   .right { position: relative; top: 0; order: -1; }
   .stage { height: 360px; }
   .avatar-wrap { width: 230px; bottom: 52px; }
-  .platform { width: 220px; height: 54px; bottom: 36px; box-shadow: inset 0 -16px 0 #8b5a2b, 0 4px 0 var(--line); }
+  .platform { width: 220px; height: 54px; bottom: 36px; box-shadow: inset 0 -16px 0 var(--g2, #8b5a2b), 0 4px 0 var(--line); }
   .levelup { font-size: 30px; margin-top: -150px; }
   .hud { padding: 10px 16px; gap: 10px; }
   .map { order: 3; width: 100%; justify-content: center; }
@@ -588,3 +588,210 @@ a.logo { color: inherit; text-decoration: none; }
 .tier-dist > div { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; }
 .bar-v { width: 70%; min-height: 3px; border-radius: 4px 4px 0 0; border: 1.5px solid var(--line); }
 @media (max-width: 900px) { .stat-tiles { grid-template-columns: repeat(2, 1fr); } }
+
+/* ---------- v2.3: เงินออม / อนาคต ---------- */
+.save-box { margin: 4px 0 12px; padding: 12px 14px; border-radius: 14px; background: #fff9db; border: 2.5px dashed #fcc419; }
+.save-q { font-family: 'Mitr'; font-size: 15px; }
+.save-box .chips { margin: 8px 0 4px; }
+.pct-input { display: inline-flex; align-items: center; gap: 4px; font-size: 14px; }
+.pct-input input { width: 64px; padding: 6px 8px; border-radius: 999px; border: 2.5px solid var(--line); font-size: 14px; text-align: center; }
+.split-bar { display: flex; height: 22px; border-radius: 999px; overflow: hidden; border: 2.5px solid var(--line); }
+.split-bar .spent { background: #ff8787; }
+.split-bar .saved { background: #51cf66; }
+.split-legend { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 8px 0; font-size: 15px; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 2px; }
+.dot.spent { background: #ff8787; }
+.dot.saved { background: #51cf66; }
+.grow-grid, .future-nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.grow-grid > div, .future-nums > div {
+  display: flex; flex-direction: column; align-items: center; text-align: center; padding: 10px 6px;
+  border: 2.5px solid var(--line); border-radius: 12px; background: #fff;
+}
+.grow-grid small, .future-nums small { color: var(--ink-soft); font-size: 12px; }
+.grow-grid b, .future-nums b { font-family: 'Mitr'; font-size: 18px; color: #2b8a3e; }
+.future-nums b { color: var(--brand-2); }
+.future-nums b.big { font-size: 20px; }
+.future-controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; font-size: 14px; }
+.future { background: linear-gradient(180deg, #fffdf7, #edf2ff); }
+
+/* ---------- v2.3: ไอเทม ---------- */
+.items-card { background: linear-gradient(180deg, #fffdf7, #fff4e6); }
+.item-get { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.item-get .check { margin: 0 0 0 auto; }
+.item-icon {
+  width: 64px; height: 64px; display: grid; place-items: center; font-size: 36px; border-radius: 16px;
+  background: #ffd43b; border: 3px solid var(--line); box-shadow: 0 4px 0 var(--line); animation: bob 3s ease-in-out infinite;
+}
+.item-get b { font-family: 'Mitr'; font-size: 20px; display: block; }
+.item-get small { color: var(--ink-soft); }
+.item-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.item-slot {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; text-align: center;
+  border: 2.5px dashed #c8b8e8; border-radius: 12px; background: #f8f4ff; opacity: .7;
+}
+.item-slot span { font-size: 24px; }
+.item-slot small { font-size: 11px; color: var(--ink-soft); line-height: 1.2; }
+.item-slot.owned { border-style: solid; border-color: var(--line); background: #fff; opacity: 1; }
+.item-slot.current { background: #fff3bf; box-shadow: 0 3px 0 var(--line); }
+
+/* ---------- v2.3: ผู้ดูแล ---------- */
+.admin-login .btn.big { margin-left: 0; }
+.admin-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.admin-head .stage-title { margin: 0; }
+.admin-tiles { grid-template-columns: repeat(3, 1fr); margin: 14px 0; }
+.admin-search { width: 100%; font-size: 16px; padding: 10px 12px; border-radius: 12px; border: 2.5px solid var(--line); margin-bottom: 12px; }
+.admin-list { display: flex; flex-direction: column; gap: 8px; }
+.admin-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px; border: 2.5px solid var(--line); border-radius: 12px; background: #fff;
+}
+.admin-row.is-hidden { background: #f1f3f5; }
+.admin-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.admin-info b { font-family: 'Mitr'; font-weight: 500; overflow-wrap: anywhere; }
+.admin-info small { color: var(--ink-soft); font-size: 13px; }
+.admin-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.tag { font-style: normal; font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1.5px solid var(--line); }
+.tag.red { background: #ffe3e3; }
+.tag.orange { background: #fff4e6; }
+.tag.gray { background: #e9ecef; }
+.admin-actions { display: flex; gap: 6px; }
+.admin-actions .btn { text-decoration: none; }
+
+/* ---------- v2.3: มือถือ (≤600px) — เล็กลง สมส่วน เห็นครบจอ แถบบนล็อกไว้ ---------- */
+.hud { position: sticky; top: 0; z-index: 50; }
+@media (max-width: 600px) {
+  body { font-size: 15px; }
+  .hud { padding: 6px 10px; gap: 6px 8px; box-shadow: 0 2px 0 rgba(42, 31, 61, .08); }
+  .logo { gap: 6px; min-width: 0; flex: 1; }
+  .logo-coin { width: 28px; height: 28px; border-width: 2.5px; font-size: 14px; flex: none; }
+  .logo b { font-size: 14px; white-space: nowrap; }
+  .logo small { font-size: 11px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hud-right { gap: 5px; margin-left: 0; flex: none; }
+  .hud-right .btn.small { padding: 5px 9px; font-size: 13px; box-shadow: 0 2px 0 var(--line); border-width: 2px; }
+  .icon-btn.mute { width: 32px; height: 32px; font-size: 14px; border-width: 2px; box-shadow: 0 2px 0 var(--line); }
+  .version-badge { font-size: 11px; padding: 4px 7px; border-width: 1.5px; box-shadow: 0 2px 0 #000; }
+  .coins { font-size: 12px; padding: 3px 9px; border-width: 2px; box-shadow: 0 2px 0 var(--line); }
+  .map { gap: 4px; margin: 0; }
+  .map li { width: 26px; height: 26px; font-size: 13px; border-width: 2px; border-radius: 8px; }
+  .map li.cur { transform: translateY(-2px) scale(1.06); box-shadow: 0 2px 0 var(--line); }
+
+  .main { padding: 10px 10px 16px; gap: 12px; }
+  .card { padding: 16px 13px; margin-bottom: 14px; border-radius: 16px; border-width: 2.5px; box-shadow: 0 5px 0 var(--line); }
+  .title { font-size: 25px; margin-bottom: 8px; }
+  .lead { font-size: 14.5px; margin-bottom: 14px; line-height: 1.55; }
+  .note { font-size: 13px; }
+  .chip { font-size: 11.5px; padding: 3px 9px; }
+  .badge-row { gap: 6px; margin-bottom: 10px; }
+  .field { margin-bottom: 12px; }
+  .field > span { font-size: 14px; }
+  .field input { font-size: 16px; padding: 9px 11px; border-width: 2.5px; } /* 16px กัน iOS ซูมอัตโนมัติ */
+  .field-row { gap: 10px; }
+  .seg { border-width: 2.5px; }
+  .seg button { font-size: 13px; padding: 8px 6px; }
+  .btn { font-size: 14.5px; padding: 10px 14px; border-width: 2.5px; box-shadow: 0 4px 0 var(--line); }
+  .btn.big { font-size: 16px; padding: 11px 18px; }
+  .btn.small { font-size: 13px; padding: 7px 11px; }
+  .actions { margin-top: 16px; gap: 8px; }
+  .pill { font-size: 13.5px; padding: 5px 11px; border-width: 2px; }
+  .chips { gap: 6px; margin: 10px 0; }
+
+  /* ฉากตัวละคร: เตี้ยลงให้เห็นเนื้อหาด้านล่างในจอแรก */
+  .stage { height: 250px; border-radius: 18px; border-width: 2.5px; box-shadow: 0 5px 0 var(--line); }
+  .avatar-wrap { width: 168px; bottom: 34px; }
+  .platform { width: 170px; height: 40px; bottom: 22px; border-width: 2.5px; border-radius: 12px; box-shadow: inset 0 -12px 0 var(--g2, #8b5a2b), 0 3px 0 var(--line); }
+  .platform span { inset: 5px 10px auto; height: 5px; }
+  .stage-look, .stage-place { top: 8px; bottom: auto; font-size: 11px; padding: 2px 8px; border-width: 2px; box-shadow: none; }
+  .stage-look { left: 8px; }
+  .stage-place { right: 8px; }
+  .stage-caption { bottom: 6px; left: 50%; transform: translateX(-50%); font-size: 11px; padding: 3px 10px; max-width: calc(100% - 16px); overflow: hidden; text-overflow: ellipsis; }
+  .nametag { font-size: 12px; padding: 1px 8px; border-width: 1.5px; border-radius: 8px; }
+  .levelup { font-size: 24px; margin-top: -120px; -webkit-text-stroke-width: 1.5px; }
+  .cloud { transform: scale(.6); }
+  .pillar { width: 90px; bottom: 50px; }
+  .ring { width: 140px; height: 38px; margin-left: -70px; bottom: 56px; border-width: 4px; }
+  .orbit { bottom: 120px; }
+  .orbit span { transform: rotate(calc(var(--i) * 45deg)) translateX(80px); width: 9px; height: 9px; margin: -4.5px; }
+
+  /* หน้ากรอกเงิน */
+  .stage-title { font-size: 22px; gap: 8px; margin-bottom: 10px; }
+  .stage-emoji { width: 40px; height: 40px; font-size: 21px; border-radius: 11px; border-width: 2.5px; }
+  .question { font-size: 16.5px; }
+  .money-input { padding: 6px 12px; gap: 8px; border-width: 2.5px; }
+  .money-input input { font-size: 24px; }
+  .money-input .coin { width: 30px; height: 30px; }
+  .money-input .unit { font-size: 13px; }
+  .calc-line { font-size: 14px; padding: 10px 12px; }
+  .big-num { font-size: 17px; }
+  .save-box { padding: 10px 11px; }
+  .warn-box { font-size: 13.5px; padding: 8px 11px; }
+
+  /* หน้าสรุปผล */
+  .total { font-size: clamp(30px, 10vw, 40px); }
+  .hero-sub { font-size: 13.5px; }
+  .explain { padding: 11px 12px; font-size: 14px; }
+  .tier-emoji { width: 64px; height: 64px; font-size: 34px; border-radius: 16px; }
+  .tier-title { font-size: 21px; }
+  .sec { font-size: 17px; margin-bottom: 10px; }
+  .story { font-size: 15px; line-height: 1.65; }
+  .rung { font-size: 13px; padding: 5px 0; border-width: 2px; border-radius: 8px; }
+  .rung em { font-size: 10px; top: -24px; }
+  .inf-total { font-size: 21px; }
+  .grow-grid, .future-nums { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  .grow-grid > div, .future-nums > div { padding: 8px 3px; border-width: 2px; }
+  .grow-grid b, .future-nums b, .future-nums b.big { font-size: 14.5px; }
+  .grow-grid small, .future-nums small { font-size: 10.5px; }
+  .compare { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .cmp { padding: 10px 6px; }
+  .cmp span { font-size: 26px; }
+  .cmp b { font-size: 18px; }
+  .badges { grid-template-columns: 1fr; gap: 8px; }
+  .badge { padding: 8px 10px; }
+  .badge > span { font-size: 24px; }
+  .item-icon { width: 50px; height: 50px; font-size: 28px; border-radius: 12px; }
+  .item-get b { font-size: 17px; }
+  .item-get .check { margin-left: 0; }
+  .item-grid { gap: 5px; }
+  .item-slot { padding: 6px 2px; border-width: 2px; }
+  .item-slot span { font-size: 20px; }
+  .item-slot small { font-size: 9.5px; }
+  .shared-banner { padding: 10px 12px; gap: 8px; font-size: 14px; }
+  .cmp-avatar { width: 84px; height: 100px; }
+  .cmp-avatar .avatar { width: 100px; margin: -8px 0 0 -8px; }
+  .cmp-total { font-size: 19px; }
+  .vs { font-size: 20px; }
+  .verdict { font-size: 15px; }
+  .manage { gap: 10px; padding: 10px 11px; }
+  .link-box input { font-size: 13px; }
+
+  /* ลีดเดอร์บอร์ด */
+  .tier-tabs { gap: 4px; }
+  .tier-tab { padding: 5px 0; border-width: 2px; border-radius: 10px; }
+  .tier-tab span { font-size: 17px; }
+  .board-row { gap: 8px; padding: 6px 10px 6px 6px; border-width: 2px; box-shadow: 0 2px 0 var(--line); }
+  .rank { width: 26px; font-size: 15px; }
+  .rank.r1, .rank.r2, .rank.r3 { font-size: 20px; }
+  .mini { width: 38px; height: 46px; }
+  .mini .avatar { width: 52px; margin: -5px 0 0 -7px; }
+  .stat-tiles b { font-size: 17px; }
+
+  .modal-backdrop { padding: 10px; }
+  .foot { font-size: 11.5px; padding: 12px; }
+}
+@media (max-width: 400px) {
+  .hide-xs { display: none; }
+  .logo small { max-width: 110px; }
+  .title { font-size: 23px; }
+  .field-row .field { flex-basis: 100%; }
+}
+@media (max-width: 900px) {
+  .main { grid-template-columns: minmax(0, 1fr); }
+  .left, .right { min-width: 0; }
+}
+@media (max-width: 600px) {
+  .logo > div { min-width: 0; overflow: hidden; }
+  .logo b { overflow: hidden; text-overflow: ellipsis; }
+}
+@media (max-width: 420px) {
+  /* แถบบนแคบ: ถ้ามีตัวนับเหรียญ ให้เหลือแค่โลโก้เหรียญ */
+  .hud:has(.coins) .logo > div { display: none; }
+}

@@ -34,7 +34,7 @@ function fitText(ctx, text, x, y, maxW, size, weight = 600, family = 'Mitr') {
 }
 
 // วาดการ์ดสรุปผลเป็นรูป PNG (1080×1350) คืนค่า Blob
-export async function makeResultCard({ player, result, tierTitle, sceneId, look }) {
+export async function makeResultCard({ player, result, tierTitle, sceneId, look, item = null }) {
   const { renderToStaticMarkup } = await import('react-dom/server')
   await Promise.all([document.fonts.load('600 100px Mitr'), document.fonts.load('400 36px Kanit'), document.fonts.load('500 36px Kanit')])
 
@@ -42,7 +42,7 @@ export async function makeResultCard({ player, result, tierTitle, sceneId, look 
     loadSvg(renderToStaticMarkup(createElement(Scene, { id: sceneId })), 840, 1120),
     loadSvg(
       renderToStaticMarkup(
-        createElement(Avatar, { gender: player.gender, look, presetIndex: player.look.presetIndex, expression: player.look.expression, pose: player.look.pose, variant: player.look.variant, name: player.name }),
+        createElement(Avatar, { gender: player.gender, look, presetIndex: player.look.presetIndex, expression: player.look.expression, pose: player.look.pose, variant: player.look.variant, name: player.name, item }),
       ),
       440,
       560,

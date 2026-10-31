@@ -417,7 +417,7 @@ export function avatarGeometry(look) {
 // หน้าตอนทำท่าดีใจ
 const CHEER_FACE = { id: 'grin', eyes: 'happy', mouth: 'grin' }
 
-export default function Avatar({ gender, look, presetIndex, expression, pose, variant = 0, name, action = null, className = '' }) {
+export default function Avatar({ gender, look, presetIndex, expression, pose, variant = 0, name, action = null, item = null, className = '' }) {
   const p = getPreset(gender, presetIndex)
   const expr = EXPRESSIONS.find((e) => e.id === expression) ?? EXPRESSIONS[0]
   const { b, legTop, torsoTop, headTop } = avatarGeometry(look)
@@ -548,17 +548,20 @@ export default function Avatar({ gender, look, presetIndex, expression, pose, va
         )
         : null
 
+  const gear = itemParts(item, head, { tx, tw, torsoTop, th })
   const headPivot = `${CX}px ${head.y + hh}px`
   return (
     <svg className={`avatar ${className}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 280" role="img" aria-label={`ตัวละครของ ${name || 'ผู้เล่น'}`}>
       <ellipse className="av-shadow" cx={CX + 4} cy={G + 4} rx={tw * 0.75 + 6} ry={7} fill="rgba(20,10,40,0.22)" />
       <g className={`av-act ${action ? 'act-' + action : ''}`} style={{ transformOrigin: `${CX}px ${G}px` }}>
         <g className="av-body">
+          {gear.back}
           {hair.back}
           {arm(-1)}
           {legs}
           {skirt}
           {torsoParts}
+          {gear.neck}
           {arm(1)}
           <g className={`av-head ${action === 'look' ? 'head-look' : ''}`} style={{ transformOrigin: headPivot }}>
             <Box x={head.x} y={head.y} w={hw} h={hh} c={skin} />
@@ -566,11 +569,119 @@ export default function Avatar({ gender, look, presetIndex, expression, pose, va
             {hair.front}
             {accFront}
             {pacifier}
+            {gear.hat}
           </g>
         </g>
       </g>
     </svg>
   )
+}
+
+// ---------------- ไอเทมประจำระดับฐานะ ----------------
+function itemParts(item, h, t) {
+  const { x, y, w } = h
+  const cx = x + w / 2
+  const out = { back: null, neck: null, hat: null }
+  const neckY = t.torsoTop + 2
+  switch (item) {
+    case 'ngob': // งอบ: กรวยกว้างสานลาย
+      out.hat = (
+        <g stroke="#8a6a2f" strokeWidth="1.2" strokeLinejoin="round">
+          <polygon points={`${x - 22},${y + 2} ${cx},${y - 30} ${x + w + 22},${y + 2}`} fill="#e3c27a" />
+          <polyline points={`${x - 8},${y - 5} ${cx},${y - 23} ${x + w + 8},${y - 5}`} fill="none" />
+          <polyline points={`${x + 6},${y - 12} ${cx},${y - 17} ${x + w - 6},${y - 12}`} fill="none" />
+          <rect x={x - 22} y={y + 1} width={w + 44} height={4} fill="#c9a45c" />
+        </g>
+      )
+      break
+    case 'phakhaoma': // ผ้าขาวม้าลายตาราง
+      out.hat = (
+        <g>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <rect key={i} x={x - 2 + i * ((w + 4) / 8)} y={y + 3} width={(w + 4) / 8 + 0.5} height={8} fill={['#e03131', '#2f9e44', '#1c7ed6', '#f8f9fa'][i % 4]} />
+          ))}
+          <rect x={x - 2} y={y + 3} width={w + 4} height={8} fill="none" stroke="#5c1a1a" strokeWidth="1" />
+          <polygon points={`${x + w + 1},${y + 6} ${x + w + 14},${y + 18} ${x + w + 8},${y + 22} ${x + w},${y + 10}`} fill="#e03131" stroke="#5c1a1a" />
+        </g>
+      )
+      break
+    case 'helmet': // หมวกกันน็อก
+      out.hat = (
+        <g>
+          <Box x={x - 5} y={y - 16} w={w + 10} h={24} c="#f76707" />
+          <rect x={x - 5} y={y + 2} width={w + 10} height={4} fill="#fff" opacity="0.8" />
+          <rect x={x + 6} y={y - 10} width={w - 12} height={4} rx={2} fill="#ffd8a8" />
+        </g>
+      )
+      break
+    case 'scarf': // ผ้าพันคอ
+      out.neck = (
+        <g>
+          <Box x={t.tx - 2} y={neckY - 4} w={t.tw + 4} h={8} c="#4dabf7" d={4} />
+          <Box x={t.tx + t.tw * 0.62} y={neckY + 2} w={9} h={t.th * 0.5} c="#339af0" d={3} />
+          {[0, 1, 2].map((i) => <rect key={i} x={t.tx + t.tw * 0.62} y={neckY + 6 + i * 6} width={9} height={2} fill="#a5d8ff" />)}
+        </g>
+      )
+      break
+    case 'goldchain': // สร้อยทอง
+      out.neck = (
+        <g>
+          <polyline points={`${cx - t.tw * 0.28},${neckY} ${cx},${neckY + t.th * 0.36} ${cx + t.tw * 0.28},${neckY}`} fill="none" stroke="#f2c94c" strokeWidth="3.5" strokeLinejoin="round" />
+          <polyline points={`${cx - t.tw * 0.28},${neckY} ${cx},${neckY + t.th * 0.36} ${cx + t.tw * 0.28},${neckY}`} fill="none" stroke="#a4801f" strokeWidth="1" strokeDasharray="2 2" />
+          <rect x={cx - 5} y={neckY + t.th * 0.34} width={10} height={10} rx={2} fill="#ffd43b" stroke="#a4801f" />
+        </g>
+      )
+      break
+    case 'sunhat': // หมวกปีกกว้าง
+      out.hat = (
+        <g>
+          <Box x={x - 18} y={y - 2} w={w + 36} h={5} c="#fff3bf" d={6} />
+          <Box x={x + 4} y={y - 18} w={w - 8} h={16} c="#ffe8a3" />
+          <rect x={x + 4} y={y - 7} width={w - 8} height={5} fill="#ff6b6b" />
+        </g>
+      )
+      break
+    case 'pearls': // สร้อยไข่มุก
+      out.neck = (
+        <g fill="#f3e7d3" stroke="#6b5f80" strokeWidth="1">
+          {Array.from({ length: 9 }).map((_, i) => {
+            const k = i / 8
+            const px = cx - t.tw * 0.26 + k * t.tw * 0.52
+            const py = neckY + Math.sin(k * Math.PI) * t.th * 0.26
+            return <circle key={i} cx={px} cy={py} r={3.2} />
+          })}
+        </g>
+      )
+      break
+    case 'captain': // หมวกกัปตัน
+      out.hat = (
+        <g>
+          <Box x={x - 4} y={y - 16} w={w + 8} h={14} c="#f8f9fa" />
+          <Box x={x - 2} y={y - 3} w={w + 4} h={6} c="#212529" d={4} />
+          <Box x={x - 6} y={y + 3} w={w * 0.7} h={4} c="#343a40" d={3} />
+          <rect x={cx - 5} y={y - 13} width={10} height={8} rx={2} fill="#ffd43b" stroke="#a4801f" />
+        </g>
+      )
+      break
+    case 'cape': // ผ้าคลุมไฮโซ
+      out.back = <polygon points={`${t.tx - 8},${neckY} ${t.tx + t.tw + 8},${neckY} ${t.tx + t.tw + 22},${neckY + t.th + 30} ${t.tx - 22},${neckY + t.th + 30}`} fill="#7048e8" stroke="#3b1f99" strokeWidth="1.5" />
+      out.neck = <rect x={cx - 5} y={neckY - 2} width={10} height={8} rx={2} fill="#ffd43b" stroke="#a4801f" />
+      break
+    case 'crown': // มงกุฎ + ผ้าคลุมแดง
+      out.back = <polygon points={`${t.tx - 8},${neckY} ${t.tx + t.tw + 8},${neckY} ${t.tx + t.tw + 24},${neckY + t.th + 32} ${t.tx - 24},${neckY + t.th + 32}`} fill="#c92a2a" stroke="#7a1414" strokeWidth="1.5" />
+      out.neck = <rect x={t.tx - 4} y={neckY - 3} width={t.tw + 8} height={6} rx={3} fill="#f8f9fa" stroke="#adb5bd" />
+      out.hat = (
+        <g stroke="#a4801f" strokeWidth="1.2" strokeLinejoin="round">
+          <polygon points={`${x + 2},${y - 2} ${x + 2},${y - 24} ${x + w * 0.27},${y - 12} ${cx},${y - 30} ${x + w * 0.73},${y - 12} ${x + w - 2},${y - 24} ${x + w - 2},${y - 2}`} fill="#ffd43b" />
+          <circle cx={cx} cy={y - 10} r={3.5} fill="#e03131" />
+          <circle cx={x + w * 0.22} cy={y - 7} r={2.5} fill="#1c7ed6" />
+          <circle cx={x + w * 0.78} cy={y - 7} r={2.5} fill="#2f9e44" />
+        </g>
+      )
+      break
+    default:
+  }
+  return out
 }
 
 function star(cx, cy, r) {

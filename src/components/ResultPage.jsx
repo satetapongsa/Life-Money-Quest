@@ -5,12 +5,16 @@ import { TIERS, COMPARISONS } from '../data/tiers'
 import { FREQS, SCHOOL_DAYS, lookForAge } from '../data/stages'
 import { shareUrl, saveHistory, SITE_URL, ownerTokenFor, forgetHistory, socialLinks, latestOwnResult, setCompareFriend, getCompareFriend } from '../lib/share'
 import CompareCard from './CompareCard'
+import SavingsCard from './SavingsCard'
+import FutureCard from './FutureCard'
+import ItemsCard from './ItemsCard'
 import { savePlayer, reportPlayer, managePlayer } from '../lib/api'
 import { unrealisticStages } from '../lib/fairness'
 import { navigate } from '../lib/router'
 import { sfx } from '../lib/sound'
 import { track } from '@vercel/analytics'
 import { TIER_SCENE } from './Scene'
+import { itemForTier } from '../data/items'
 
 // กันบันทึกซ้ำตอน React StrictMode เรียก effect สองรอบ
 const saving = new WeakMap()
@@ -47,7 +51,7 @@ function entryText(stage, entry) {
   return `${baht(entry.amount)} ${FREQS[entry.freq].unit}${entry.mode === 'work' ? ' · ทำงาน' : ''}`
 }
 
-export default function ResultPage({ player, shared, savedId, onSaved, onRestart }) {
+export default function ResultPage({ player, shared, savedId, onSaved, onRestart, onPreviewLook, itemEquipped, onEquip }) {
   const r = useMemo(() => computeResult(player), [player])
   const flagged = useMemo(() => unrealisticStages(r.rows.map((x) => x.stage), player.entries).length > 0, [r, player])
   const [reported, setReported] = useState(false)
@@ -162,7 +166,7 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
   // สร้างรูปการ์ดสรุปผล แล้วแชร์รูป (มือถือ) หรือดาวน์โหลด
   const cardFile = async () => {
     const { makeResultCard } = await import('../lib/cardImage')
-    const blob = await makeResultCard({ player, result: r, tierTitle: title, sceneId: TIER_SCENE[r.tierIndex], look: lookForAge(player.age) })
+    const blob = await makeResultCard({ player, result: r, tierTitle: title, sceneId: TIER_SCENE[r.tierIndex], look: lookForAge(player.age), item: itemEquipped === false ? null : itemForTier(r.tierIndex) })
     return new File([blob], `life-money-quest-${player.name}.png`, { type: 'image/png' })
   }
   const withImage = async (fn) => {
@@ -248,6 +252,10 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
       </div>
 
       {waitingFriend && <CompareCard me={player} friend={waitingFriend} />}
+
+      {!shared && onEquip && <ItemsCard tier={r.tierIndex} equipped={itemEquipped} onToggle={onEquip} />}
+      <SavingsCard player={player} shared={shared} />
+      {!shared && <FutureCard player={player} onPreviewLook={onPreviewLook} />}
 
       <div className="card tier-card" style={{ '--tier': r.tier.color }}>
         <div className="tier-emoji">{r.tier.emoji}</div>

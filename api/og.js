@@ -6,6 +6,7 @@ import { renderCardSvg } from './_gen/og-card.js'
 import { computeResult, baht } from '../src/lib/calc.js'
 import { lookForAge } from '../src/data/stages.js'
 import { TIERS } from '../src/data/tiers.js'
+import { itemForTier } from '../src/data/items.js'
 
 // ใช้ path ของไฟล์ฟอนต์ (ตัวเลือก fontBuffers ของ resvg ไม่โหลดฟอนต์ให้จริง)
 const FONT_FILES = ['./_fonts/Mitr_400Regular.ttf', './_fonts/Mitr_600SemiBold.ttf'].map((f) => fileURLToPath(new URL(f, import.meta.url)))
@@ -35,6 +36,7 @@ export async function GET(request) {
       sceneId: TIER_SCENE[p.tier],
       ageLook: lookForAge(p.age),
       site: url.host,
+      item: itemForTier(p.tier),
     })
     const png = new Resvg(svg, {
       fitTo: { mode: 'width', value: 1200 },
