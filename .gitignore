@@ -1,0 +1,17 @@
+# dependencies & build output
+node_modules
+dist
+
+# env / secrets (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# local tooling
+.claude
+.vercel
+*.log
+.DS_Store
+Thumbs.db
