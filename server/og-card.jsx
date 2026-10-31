@@ -44,7 +44,7 @@ export function renderCardSvg({ name, age, gender, look, total, tierTitle, tierC
     <rect x="600" y="390" width="560" height="96" rx="22" fill="#fffdf7" stroke="#2a1f3d" stroke-width="5"/>
     <rect x="622" y="410" width="18" height="56" rx="6" fill="${tierColor}"/>
     <text x="660" y="452" font-size="${[...tierTitle].length > 22 ? 28 : 34}" font-weight="600">${esc(tierTitle)}</text>
-    <text x="600" y="560" font-size="28" fill="#5b2fe0">มาลองเล่นของคุณที่ ${esc(site)}</text>
+    <text x="600" y="560" font-size="24" fill="#5b2fe0">มาลองเล่นของคุณที่ ${esc(site)}</text>
   </g>
 </svg>`
 }

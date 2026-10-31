@@ -101,6 +101,6 @@ Learn more: https://react.dev/warnings/version-mismatch`))}fo();function po(e,t)
     <rect x="600" y="390" width="560" height="96" rx="22" fill="#fffdf7" stroke="#2a1f3d" stroke-width="5"/>
     <rect x="622" y="410" width="18" height="56" rx="6" fill="${o}"/>
     <text x="660" y="452" font-size="${[...a].length>22?28:34}" font-weight="600">${R(a)}</text>
-    <text x="600" y="560" font-size="28" fill="#5b2fe0">มาลองเล่นของคุณที่ ${R(l)}</text>
+    <text x="600" y="560" font-size="24" fill="#5b2fe0">มาลองเล่นของคุณที่ ${R(l)}</text>
   </g>
 </svg>`}export{B as renderCardSvg};
