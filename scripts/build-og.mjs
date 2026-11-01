@@ -6,6 +6,7 @@ import react from '@vitejs/plugin-react'
 await build({
   configFile: false,
   logLevel: 'warn',
+  publicDir: false, // ไม่ต้องคัดลอกไฟล์ใน public/ มาไว้ในโฟลเดอร์ของฟังก์ชัน
   plugins: [react()],
   define: { 'process.env.NODE_ENV': '"production"' },
   ssr: { noExternal: true },
