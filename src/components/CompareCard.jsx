@@ -4,7 +4,7 @@ import { computeResult, baht, bahtShort } from '../lib/calc'
 import { lookForAge } from '../data/stages'
 import { itemForTier } from '../data/items'
 
-// การ์ดเทียบผลสองคนแบบคู่กัน
+// การ์ดเทียบผลของฉันกับผู้เล่นอีกคนแบบคู่กัน
 export default function CompareCard({ me, friend }) {
   const a = useMemo(() => computeResult(me), [me])
   const b = useMemo(() => computeResult(friend), [friend])
@@ -38,7 +38,7 @@ export default function CompareCard({ me, friend }) {
       <div className="cmp-vs">
         {side(me, a, 'ฉัน')}
         <span className="vs">VS</span>
-        {side(friend, b, 'เพื่อน')}
+        {side(friend, b, friend.name)}
       </div>
       <p className="verdict">🏆 {verdict}</p>
       {ids.length > 0 && (
@@ -54,7 +54,7 @@ export default function CompareCard({ me, friend }) {
               </div>
             )
           })}
-          <p className="note center">แท่งซ้าย = ฉัน · แท่งขวา = เพื่อน (เทียบเฉพาะช่วงวัยที่ผ่านมาทั้งคู่)</p>
+          <p className="note center">แท่งซ้าย = ฉัน · แท่งขวา = {friend.name} (เทียบเฉพาะช่วงวัยที่ผ่านมาทั้งคู่)</p>
         </div>
       )}
     </div>

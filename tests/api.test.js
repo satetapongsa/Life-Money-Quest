@@ -55,7 +55,8 @@ describe('POST /api/player', () => {
   })
   it('ตัวเลขเกินจริงถูก flag และไม่ถูกนับเป็นยอดสูงสุด', async () => {
     db.replies = saveReplies({ best_total: null, best_tier: null })
-    const body = await (await post(player, record('ทดสอบ', { work1: { amount: '90000000', freq: 'month' } }))).json()
+    // ค่าขนมอนุบาลวันละ 5,000 บาท (ไม่เกินเพดาน 10,000 แต่เกินจริง)
+    const body = await (await post(player, record('ทดสอบ', { kinder: { amount: '5000', days: 'school' } }))).json()
     expect(body).toMatchObject({ flagged: true, newBest: false })
   })
   it('ไม่มีบัตรผ่าน PIN → 401, บัตรของชื่ออื่น → 403 (ก่อนแตะฐานข้อมูล)', async () => {
@@ -173,9 +174,10 @@ describe('POST /api/manage', () => {
     db.replies = [[{ owner_hash: tokenHash(token) }], []]
     expect((await post(manage, { id: 'AAAAAAAAAA', token, action: 'hide' })).status).toBe(200)
     expect(db.queries.at(-1).text).toContain('update players set is_public')
-    db.replies = [[{ owner_hash: tokenHash(token) }], []]
+    db.replies = [[{ owner_hash: tokenHash(token), name_key: 'มายด์' }], [], [], []]
     expect((await post(manage, { id: 'AAAAAAAAAA', token, action: 'delete' })).status).toBe(200)
-    expect(db.queries.at(-1).text).toContain('delete from players')
+    // ลบผล + ชื่อ + ประวัติ PIN
+    expect(db.queries.slice(-3).map((q) => q.text.split(' ').slice(0, 3).join(' '))).toEqual(['delete from players', 'delete from accounts', 'delete from pin_attempts'])
   })
   it('กุญแจผิดหรือไม่มีผลนี้ → 403 เหมือนกัน', async () => {
     db.replies = [[{ owner_hash: tokenHash(token) }]]
@@ -229,5 +231,34 @@ describe('POST /api/admin', async () => {
     process.env.ADMIN_PASSWORD = ''
     expect((await login('x')).status).toBe(503)
     process.env.ADMIN_PASSWORD = 'test-admin-password'
+  })
+})
+
+describe('POST /api/manage ด้วย PIN (v2.6)', async () => {
+  const { hashPin } = await import('../api/_lib/pin.js')
+  const stored = hashPin('246810')
+  const del = (pin, ip = '6.6.6.6') => post(manage, { id: 'AAAAAAAAAA', pin, action: 'delete' }, { 'x-real-ip': ip })
+  it('PIN ถูก → ลบผล ชื่อ และประวัติการเดา PIN ทั้งหมด', async () => {
+    db.replies = [[{ owner_hash: null, name_key: 'มายด์', pin_hash: stored }], [{ byName: 0, byIp: 0 }], [], [], [], []]
+    expect((await del('246810')).status).toBe(200)
+    const texts = db.queries.map((q) => q.text)
+    expect(texts).toEqual(expect.arrayContaining([
+      expect.stringContaining('delete from players'),
+      expect.stringContaining('delete from accounts'),
+      expect.stringContaining('delete from pin_attempts'),
+    ]))
+  })
+  it('PIN ผิด → 401 ไม่ลบ และถูกนับการเดา', async () => {
+    db.replies = [[{ owner_hash: null, name_key: 'มายด์', pin_hash: stored }], [{ byName: 0, byIp: 0 }], []]
+    expect((await del('000000')).status).toBe(401)
+    expect(db.queries.some((q) => q.text.startsWith('delete'))).toBe(false)
+    expect(db.queries.at(-1).text).toContain('insert into pin_attempts')
+  })
+  it('ถูกล็อก → 429, ชื่อยังไม่มี PIN → 409, PIN ผิดรูปแบบ → 400', async () => {
+    db.replies = [[{ owner_hash: null, name_key: 'มายด์', pin_hash: stored }], [{ byName: 5, byIp: 0 }]]
+    expect((await del('246810')).status).toBe(429)
+    db.replies = [[{ owner_hash: null, name_key: 'เก่า', pin_hash: null }]]
+    expect((await del('246810')).status).toBe(409)
+    expect((await del('12ab56')).status).toBe(400)
   })
 })

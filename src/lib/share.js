@@ -67,14 +67,14 @@ export function historyTiers() {
   return tiers
 }
 
-// ผลล่าสุดของฉัน (ใช้เทียบกับเพื่อน)
+// ผลล่าสุดของฉัน (ใช้เทียบกับผู้เล่นอื่น)
 export function latestOwnResult() {
   const r = readHistory()[0]
   const player = r && fromRecord(r)
   return player ? { player, id: r.id } : null
 }
 
-// เพื่อนที่รอเทียบผล (กด "เล่นเพื่อเทียบ" จากการ์ดเพื่อน) — อยู่แค่ในแท็บนี้
+// ผู้เล่นที่รอเทียบผล (กด "เล่นเพื่อเทียบ" จากการ์ดเพื่อน) — อยู่แค่ในแท็บนี้
 const COMPARE_KEY = 'lmq-compare'
 export function setCompareFriend(player) {
   try {

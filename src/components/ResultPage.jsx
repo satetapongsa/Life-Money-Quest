@@ -8,6 +8,7 @@ import CompareCard from './CompareCard'
 import SavingsCard from './SavingsCard'
 import FutureCard from './FutureCard'
 import ItemsCard from './ItemsCard'
+import DeleteWithPin from './DeleteWithPin'
 import { savePlayer, reportPlayer, managePlayer } from '../lib/api'
 import { unrealisticStages } from '../lib/fairness'
 import { navigate } from '../lib/router'
@@ -201,7 +202,7 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
   const shareImage = () => withImage((file) => navigator.share({ files: [file], text: `${text} ${link}` }))
   const canShareFiles = typeof navigator.canShare === 'function' && navigator.canShare({ files: [new File([''], 'x.png', { type: 'image/png' })] })
 
-  // เทียบกับเพื่อน: ดูการ์ดเพื่อนแล้วเทียบกับผลล่าสุดของฉัน หรือเล่นจบแล้วเทียบกับเพื่อนที่ฝากไว้
+  // เทียบกับผู้เล่นอื่น: ดูการ์ดผู้เล่นแล้วเทียบกับผลล่าสุดของฉัน หรือเล่นจบแล้วเทียบกับเพื่อนที่ฝากไว้
   const viewingFriend = shared && !ownerToken
   const [mine] = useState(() => (viewingFriend ? latestOwnResult() : null))
   const [compareOpen, setCompareOpen] = useState(false)
@@ -394,6 +395,7 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
             <button className="btn small ghost danger" onClick={() => manage('delete')} disabled={manageBusy}>🗑️ ลบผลนี้ถาวร</button>
           </div>
         )}
+        {shared && savedId && <DeleteWithPin id={savedId} name={player.name} onDeleted={onRestart} />}
         {shared && savedId && !ownerToken && (
           <button className="link-btn" onClick={report} disabled={reported}>
             {reported ? '🚩 แจ้งแล้ว ขอบคุณนะ' : '🚩 รายงานชื่อหรือผลที่ไม่เหมาะสม'}

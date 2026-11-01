@@ -44,7 +44,7 @@ function Router() {
   return <Game game={game} />
 }
 
-// ---- ผลของเพื่อน (ลิงก์ /r/<id>) ----
+// ---- การ์ดผู้เล่น (ลิงก์ /r/<id> หรือกดจากลีดเดอร์บอร์ด) ----
 function SharedResult({ id, onRestart }) {
   const [state, setState] = useState({ loading: true })
   useEffect(() => {
@@ -59,13 +59,13 @@ function SharedResult({ id, onRestart }) {
 
   if (state.player) return <SharedView player={state.player} id={id} onRestart={onRestart} />
   const msg = state.loading
-    ? 'กำลังโหลดการ์ดของเพื่อน...'
+    ? 'กำลังเปิดการ์ดผู้เล่น...'
     : state.error === 'hidden'
       ? 'ผลนี้ถูกซ่อนแล้ว เพราะถูกรายงานว่าไม่เหมาะสม'
       : 'ไม่พบผลลัพธ์นี้ ลิงก์อาจไม่ถูกต้อง'
   return (
     <Layout
-      hud={<Hud label="ผลลัพธ์ของเพื่อน" />}
+      hud={<Hud label="การ์ดผู้เล่น" />}
       left={
         <div className="card calc-card pop-in">
           {state.loading && <div className="coin-spin">฿</div>}
@@ -86,7 +86,7 @@ function SharedView({ player, id, onRestart }) {
   }
   return (
     <Layout
-      hud={<Hud label="ผลลัพธ์ของเพื่อน" />}
+      hud={<Hud label="การ์ดผู้เล่น" />}
       left={<ResultPage player={player} shared savedId={id} onRestart={restart} />}
       right={<AvatarStage player={player} look={lookForAge(player.age)} scene={TIER_SCENE[tier]} item={itemForTier(tier)} caption={`${player.name} · ${player.age} ปี`} />}
     />

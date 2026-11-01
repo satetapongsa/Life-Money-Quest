@@ -38,3 +38,17 @@ export function readClaim(token) {
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null
   return Buffer.from(key, 'base64url').toString()
 }
+
+// กันเดา PIN: ผิด 5 ครั้ง/15 นาที ต่อชื่อ หรือ 20 ครั้ง/15 นาที ต่อ IP → ล็อก (ใช้ทั้งยืนยันชื่อและลบข้อมูล)
+const MAX_FAILS_NAME = 5
+const MAX_FAILS_IP = 20
+
+export async function pinLocked(sql, key, ip) {
+  const [{ byName, byIp }] = await sql`
+    select count(*) filter (where name_key = ${key})::int as "byName",
+           count(*) filter (where ip_hash = ${ip})::int as "byIp"
+    from pin_attempts where not ok and created_at > now() - interval '15 minutes' and (name_key = ${key} or ip_hash = ${ip})`
+  return byName >= MAX_FAILS_NAME || byIp >= MAX_FAILS_IP
+}
+
+export const logPinAttempt = (sql, key, ip, ok) => sql`insert into pin_attempts (name_key, ip_hash, ok) values (${key}, ${ip}, ${ok})`

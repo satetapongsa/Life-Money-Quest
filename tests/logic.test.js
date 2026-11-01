@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { computeResult, inflationAdjusted } from '../src/lib/calc.js'
-import { fromRecord, toRecord, MAX_AMOUNT } from '../src/lib/record.js'
+import { fromRecord, toRecord } from '../src/lib/record.js'
 import { cleanName, nameKey, isPin } from '../src/lib/names.js'
 import { unrealisticStages, isUnrealistic } from '../src/lib/fairness.js'
 import { stagesForAge, yearlyAmount, ALL_STAGES } from '../src/data/stages.js'
@@ -78,7 +78,7 @@ describe('ตรวจข้อมูลจากลิงก์/request (fromRe
     expect(fromRecord(null)).toBeNull()
   })
   it('ตัดชื่อเหลือ 20 ตัว, ตัวเลือกแปลกใช้ค่าปกติ, เงินเกินเพดานถูกทิ้ง', () => {
-    const p = fromRecord({ v: 1, n: 'x'.repeat(40), a: 30, g: 'zz', l: { presetIndex: 999, pose: 'evil' }, e: { kinder: { amount: 20, days: 'hack' }, uni: { amount: MAX_AMOUNT + 1 }, ['__proto__']: { amount: 1 } } })
+    const p = fromRecord({ v: 1, n: 'x'.repeat(40), a: 30, g: 'zz', l: { presetIndex: 999, pose: 'evil' }, e: { kinder: { amount: 20, days: 'hack' }, uni: { amount: -5 }, ['__proto__']: { amount: 1 } } })
     expect(p.name).toHaveLength(20)
     expect(p.gender).toBe('m')
     expect(p.look.presetIndex).toBe(0)
@@ -193,5 +193,30 @@ describe('เนื้อหาเพิ่ม (v2.4)', async () => {
   })
   it('แคชของ service worker ตรงกับเวอร์ชันแอป (ต้องเปลี่ยนทุกครั้งที่ออกเวอร์ชัน)', () => {
     expect(fs.readFileSync('public/sw.js', 'utf8')).toContain(`'lmq-v${APP_VERSION}'`)
+  })
+})
+
+describe('เพดานเงินวันละ 10,000 บาท (v2.6)', async () => {
+  const { capFor, DAILY_CAP } = await import('../src/data/stages.js')
+  const st = (id) => ALL_STAGES.find((s) => s.id === id)
+  it('เพดานตามหน่วยที่กรอก', () => {
+    expect(DAILY_CAP).toBe(10_000)
+    expect(capFor(st('kinder'), { days: 'school' })).toBe(10_000)
+    expect(capFor(st('work1'), { freq: 'day' })).toBe(10_000)
+    expect(capFor(st('work1'), { freq: 'week' })).toBe(70_000)
+    expect(capFor(st('work1'), { freq: 'month' })).toBe(300_000)
+  })
+  it('ข้อมูลจากลิงก์/API ที่เกินเพดานถูกตัดลงมา', () => {
+    const p = fromRecord({ v: 1, n: 'a', a: 40, g: 'm', l: {}, e: { kinder: { amount: 50_000 }, uni: { amount: 999_999, freq: 'day' }, work1: { amount: 9e9, freq: 'month' }, work2: { amount: 80_000, freq: 'week' } } })
+    expect(p.entries.kinder.amount).toBe('10000')
+    expect(p.entries.uni.amount).toBe('10000')
+    expect(p.entries.work1.amount).toBe('300000')
+    expect(p.entries.work2.amount).toBe('70000')
+  })
+  it('ไม่มีช่วงไหนเกินวันละ 10,000 บาทเมื่อคิดเป็นรายปี', () => {
+    for (const s of ALL_STAGES) for (const freq of ['day', 'week', 'month']) {
+      const e = s.kind === 'school' ? { days: 'all' } : { freq }
+      expect(yearlyAmount(s, { ...e, amount: capFor(s, e) })).toBeLessThanOrEqual(DAILY_CAP * 366)
+    }
   })
 })

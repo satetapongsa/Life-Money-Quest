@@ -29,3 +29,5 @@ export const fetchStats = () => request('/api/stats')
 export const reportPlayer = (id) => postJson('/api/report', { id })
 
 export const managePlayer = (id, token, action) => postJson('/api/manage', { id, token, action })
+
+export const managePlayerWithPin = (id, pin, action) => postJson('/api/manage', { id, pin, action })

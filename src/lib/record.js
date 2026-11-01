@@ -1,9 +1,7 @@
 // รูปแบบข้อมูลผู้เล่นที่ใช้ร่วมกันระหว่างเว็บและ API (ไฟล์นี้ต้องรันบน Node ได้ — ใส่ .js ทุก import)
-import { ALL_STAGES, FREQS, SCHOOL_DAYS, MIN_AGE, MAX_AGE } from '../data/stages.js'
+import { ALL_STAGES, FREQS, SCHOOL_DAYS, MIN_AGE, MAX_AGE, capFor } from '../data/stages.js'
 import { PRESETS, EXPRESSIONS, POSES } from '../data/avatars.js'
 import { cleanName } from './names.js'
-
-export const MAX_AMOUNT = 100_000_000
 
 export function toRecord(player) {
   return {
@@ -40,10 +38,11 @@ export function fromRecord(r) {
     const e = Object.hasOwn(src, s.id) ? src[s.id] : null
     if (!e || typeof e !== 'object') continue
     const amount = Number(e.amount)
-    if (!Number.isFinite(amount) || amount < 0 || amount > MAX_AMOUNT) continue
-    entries[s.id] = s.kind === 'school'
-      ? { amount: String(amount), days: oneOf(e.days, Object.keys(SCHOOL_DAYS), 'school') }
-      : { amount: String(amount), freq: oneOf(e.freq, Object.keys(FREQS), 'month'), mode: oneOf(e.mode, ['study', 'work'], 'study') }
+    if (!Number.isFinite(amount) || amount < 0) continue
+    const entry = s.kind === 'school'
+      ? { days: oneOf(e.days, Object.keys(SCHOOL_DAYS), 'school') }
+      : { freq: oneOf(e.freq, Object.keys(FREQS), 'month'), mode: oneOf(e.mode, ['study', 'work'], 'study') }
+    entries[s.id] = { amount: String(Math.min(amount, capFor(s, entry))), ...entry }
     // % ที่เก็บออมได้ในช่วงนั้น (v2.3) — ไม่มีหรือผิดรูปแบบ = ไม่ได้ระบุ
     const save = Number(e.save)
     if (e.save !== undefined && e.save !== '' && Number.isFinite(save) && save >= 0 && save <= 100) entries[s.id].save = Math.round(save)

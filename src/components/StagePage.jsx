@@ -1,4 +1,4 @@
-import { FREQS, SCHOOL_DAYS, yearlyAmount } from '../data/stages'
+import { FREQS, SCHOOL_DAYS, yearlyAmount, capFor } from '../data/stages'
 import { baht } from '../lib/calc'
 import { isUnrealistic, limitText } from '../lib/fairness'
 import { SAVE_CHOICES } from '../lib/savings'
@@ -7,7 +7,6 @@ import { STAGE_FACTS, NOODLE_TODAY } from '../data/facts'
 import { inflationFactor } from '../data/inflation'
 import { pick } from '../lib/color'
 
-const MAX_AMOUNT = 100_000_000 // ต้องตรงกับขีดจำกัดใน lib/share.js
 
 export default function StagePage({ stage, index, count, entry, setEntry, done, onDone, onNext, onBack, isLast, age }) {
   const [fact] = useState(() => pick(STAGE_FACTS[stage.id] ?? ['']))
@@ -16,11 +15,18 @@ export default function StagePage({ stage, index, count, entry, setEntry, done, 
   const stageYear = nowYear - Number(age) + stage.from
   const noodleThen = stageYear < nowYear - 1 ? NOODLE_TODAY / inflationFactor(stageYear, nowYear) : null
   const e = entry ?? (stage.kind === 'school' ? { amount: '', days: 'school' } : { amount: '', freq: stage.typicalFreq || 'month', mode: 'study' })
-  const update = (patch) => setEntry({ ...e, ...patch })
+  const update = (patch) => {
+    const next = { ...e, ...patch }
+    const c = capFor(stage, next)
+    if (next.amount !== '' && Number(next.amount) > c) next.amount = String(c)
+    setEntry(next)
+  }
   const filled = e.amount !== '' && Number(e.amount) >= 0
   const perYear = yearlyAmount(stage, e)
   const question = stage.altMode && e.mode === 'work' ? stage.altMode.question : stage.question
   const unit = stage.kind === 'school' ? 'บาท/วัน' : FREQS[e.freq].unit
+  // ไม่มีใครได้เงินเกินวันละ 10,000 บาท
+  const cap = capFor(stage, e)
 
   return (
     <div className="card pop-in" key={stage.id}>
@@ -70,7 +76,8 @@ export default function StagePage({ stage, index, count, entry, setEntry, done, 
           value={e.amount}
           placeholder="0"
           aria-label={`จำนวนเงิน (${unit})`}
-          onChange={(ev) => update({ amount: Number(ev.target.value) > MAX_AMOUNT ? String(MAX_AMOUNT) : ev.target.value })}
+          max={cap}
+          onChange={(ev) => update({ amount: Number(ev.target.value) > cap ? String(cap) : ev.target.value })}
           onKeyDown={(ev) => {
             if (ev.key === 'Enter' && filled) (done ? onNext() : onDone())
           }}
@@ -78,6 +85,7 @@ export default function StagePage({ stage, index, count, entry, setEntry, done, 
         />
         <span className="unit">{unit}</span>
       </div>
+      <small className="note cap-note">สูงสุด {baht(cap)} {unit} (ไม่มีใครได้เกินวันละ 10,000 บาท)</small>
       <div className="chips">
         {stage.presets.map((p) => (
           <button key={p} className="pill" onClick={() => update({ amount: String(p) })}>

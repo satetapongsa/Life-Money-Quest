@@ -85,6 +85,11 @@ export const SCHOOL_DAYS = {
   all: { label: 'ทุกวัน', perYear: 365, note: '365 วัน/ปี' },
 }
 
+// ไม่มีใครได้เงินเกินวันละ 10,000 บาท → เพดานต่อหน่วยที่กรอก (ใช้ทั้งหน้าเว็บและ API)
+export const DAILY_CAP = 10_000
+export const AMOUNT_CAP = { day: DAILY_CAP, week: 70_000, month: 300_000 }
+export const capFor = (stage, entry) => (stage.kind === 'school' ? DAILY_CAP : AMOUNT_CAP[entry?.freq] ?? AMOUNT_CAP.month)
+
 export const MIN_AGE = 4
 export const MAX_AGE = 100
 
