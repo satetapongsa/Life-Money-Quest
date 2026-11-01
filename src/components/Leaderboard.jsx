@@ -47,7 +47,7 @@ export default function Leaderboard() {
         <span className="chip ghost">{total.toLocaleString('th-TH')} ผู้เล่น</span>
       </div>
       <h1 className="title">ทำเนียบ<span className="hl">ฐานะ</span></h1>
-      <p className="lead">เลือกระดับฐานะเพื่อดูว่าใครมีเงินไหลผ่านชีวิตมากที่สุดในกลุ่มนั้น กดที่ชื่อเพื่อดูการ์ดของแต่ละคน</p>
+      <p className="lead">เลือกระดับฐานะเพื่อดูว่าใครมีเงินไหลผ่านชีวิตมากที่สุดในกลุ่มนั้น (1 ชื่อ = 1 คน นับยอดสูงสุดของแต่ละคน) กดที่ชื่อเพื่อดูการ์ด</p>
 
       <div className="band-chips" role="group" aria-label="ช่วงอายุ">
         {AGE_BANDS.map((b) => (
@@ -92,7 +92,7 @@ export default function Leaderboard() {
               </span>
               <span className="who">
                 <b>{p.name}</b>
-                <small>{p.age} ปี · {TIERS[p.tier].emoji} {TIERS[p.tier].title.split(' ')[0]}</small>
+                <small>{p.age} ปี · {TIERS[p.tier].emoji} {TIERS[p.tier].title.split(' ')[0]}{p.plays > 1 ? ` · เล่น ${p.plays} ครั้ง` : ''}</small>
               </span>
               <span className="amt">
                 <b>{bahtShort(p.total)}</b>

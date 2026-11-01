@@ -1,7 +1,7 @@
 // POST /api/admin  { action, ... }  — หน้าผู้ดูแล
 //   login  { password }                     → { token, exp }  (ใช้ได้ 8 ชม.)
 //   list   { filter, q }  + Bearer token    → ผลล่าสุด/ถูกรายงาน/เกินจริง/ถูกซ่อน
-//   hide | unhide | delete  { id } + Bearer token
+//   hide | unhide | delete | resetpin  { id } + Bearer token  (resetpin: ลบ PIN ของชื่อนี้ ให้ตั้งใหม่ได้)
 // ปิดใช้งานถ้าไม่ได้ตั้ง ADMIN_PASSWORD
 import { createHmac, timingSafeEqual } from 'node:crypto'
 import { db, json, fail, serverError, ipHash, isId } from './_lib/db.js'
@@ -56,7 +56,8 @@ export async function POST(request) {
       const filter = FILTERS.includes(body.filter) ? body.filter : 'recent'
       const q = typeof body.q === 'string' ? body.q.trim().slice(0, 30) : ''
       const rows = await sql`
-        select p.id, p.name, p.age, p.total, p.tier, p.is_public, p.flagged, p.hidden, p.created_at,
+        select p.id, p.name, p.age, p.total, p.tier, p.is_public, p.flagged, p.hidden, p.created_at, p.updated_at, p.plays, p.best_total,
+               (select a.pin_hash is not null from accounts a where a.name_key = p.name_key) as has_pin,
                (select count(*)::int from reports r where r.player_id = p.id) as reports
         from players p
         where (${filter} <> 'reported' or exists (select 1 from reports r where r.player_id = p.id))
@@ -64,20 +65,30 @@ export async function POST(request) {
           and (${filter} <> 'hidden' or p.hidden)
           and (${q} = '' or p.name ilike '%' || ${q} || '%' or p.id = ${q})
         order by case when ${filter} = 'reported' then (select count(*) from reports r where r.player_id = p.id) else 0 end desc,
-                 p.created_at desc
+                 p.updated_at desc
         limit 50`
       const [{ total, reported, hidden }] = await sql`
         select count(*)::int as total,
                (select count(distinct player_id)::int from reports) as reported,
                count(*) filter (where hidden)::int as hidden
         from players`
-      return json({ rows: rows.map((r) => ({ ...r, total: Number(r.total) })), counts: { total, reported, hidden } })
+      return json({ rows: rows.map((r) => ({ ...r, total: Number(r.total), best_total: r.best_total == null ? null : Number(r.best_total) })), counts: { total, reported, hidden } })
+    }
+
+    if (body.action === 'resetpin') {
+      if (!isId(body.id)) return fail(400, 'invalid id')
+      const res = await sql`update accounts a set pin_hash = null, updated_at = now() from players p where p.id = ${body.id} and a.name_key = p.name_key returning a.name_key`
+      return res.length ? json({ ok: true }) : fail(404, 'not found')
     }
 
     if (['hide', 'unhide', 'delete'].includes(body.action)) {
       if (!isId(body.id)) return fail(400, 'invalid id')
       let res
-      if (body.action === 'delete') res = await sql`delete from players where id = ${body.id} returning id`
+      // ลบผล = ลบชื่อด้วย (ชื่อนี้ว่างให้คนอื่นตั้งได้)
+      if (body.action === 'delete') {
+        res = await sql`delete from players where id = ${body.id} returning name_key`
+        if (res.length) await sql`delete from accounts where name_key = ${res[0].name_key}`
+      }
       else {
         res = await sql`update players set hidden = ${body.action === 'hide'} where id = ${body.id} returning id`
         if (body.action === 'unhide') await sql`delete from reports where player_id = ${body.id}`

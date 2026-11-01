@@ -10,17 +10,24 @@ vi.mock('@neondatabase/serverless', () => ({
 }))
 
 process.env.DATABASE_URL = 'postgresql://user:pass@example.test/db'
+process.env.IP_HASH_SALT = 'test-salt'
 const player = await import('../api/player.js')
 const leaderboard = await import('../api/leaderboard.js')
 const report = await import('../api/report.js')
 const manage = await import('../api/manage.js')
 const stats = await import('../api/stats.js')
 const { tokenHash } = await import('../api/_lib/db.js')
+const { issueClaim, hashPin } = await import('../api/_lib/pin.js')
+const nameApi = await import('../api/name.js')
+const claimApi = await import('../api/claim.js')
 
 const post = (handler, body, headers = {}) =>
   handler.POST(new Request('http://x/api', { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: typeof body === 'string' ? body : JSON.stringify(body) }))
 const get = (handler, qs) => handler.GET(new Request(`http://x/api${qs}`))
-const record = (n, e = {}) => ({ record: { v: 1, n, a: 30, g: 'm', l: {}, e } })
+// บันทึกผลต้องมีบัตรผ่าน PIN ของชื่อนั้น
+const record = (n, e = {}, claim = issueClaim(n.trim().toLowerCase())) => ({ record: { v: 1, n, a: 30, g: 'm', l: {}, e }, claim })
+// คิวคำตอบของการบันทึก: นับความถี่, บันทึก log, upsert
+const saveReplies = (row = {}) => [[{ n: 0 }], [], [{ id: 'AAAAAAAAAA', plays: 1, best_total: '3840000', best_tier: 5, created: true, ...row }]]
 
 beforeEach(() => {
   db.queries = []
@@ -28,29 +35,41 @@ beforeEach(() => {
 })
 
 describe('POST /api/player', () => {
-  it('บันทึกและคำนวณยอดที่เซิร์ฟเวอร์', async () => {
-    db.replies = [[{ n: 0 }], []]
+  it('บันทึก (upsert ตามชื่อ) และคำนวณยอดที่เซิร์ฟเวอร์', async () => {
+    db.replies = saveReplies()
     const res = await post(player, record('ทดสอบ', { work1: { amount: '40000', freq: 'month' } }))
     expect(res.status).toBe(201)
     const body = await res.json()
-    expect(body).toMatchObject({ total: 3_840_000, flagged: false })
-    expect(body.id).toMatch(/^[A-Za-z0-9]{10}$/)
-    const insert = db.queries.find((q) => q.text.startsWith('insert into players'))
-    expect(insert.values).toContain('ทดสอบ')
+    expect(body).toMatchObject({ id: 'AAAAAAAAAA', total: 3_840_000, flagged: false, plays: 1, bestTotal: 3_840_000, newBest: true })
+    const upsert = db.queries.find((q) => q.text.startsWith('insert into players'))
+    expect(upsert.text).toContain('on conflict (name_key) do update')
+    expect(upsert.values).toEqual(expect.arrayContaining(['ทดสอบ', 'ทดสอบ'.toLowerCase()]))
     // ฐานข้อมูลเก็บแค่แฮชของกุญแจ ไม่เก็บกุญแจจริง
-    expect(insert.values).toContain(tokenHash(body.token))
-    expect(insert.values).not.toContain(body.token)
+    expect(upsert.values).toContain(tokenHash(body.token))
+    expect(upsert.values).not.toContain(body.token)
   })
-  it('ตัวเลขเกินจริงถูก flag', async () => {
-    db.replies = [[{ n: 0 }], []]
+  it('เล่นซ้ำชื่อเดิม: อัปเดต (200) และบอกยอดสูงสุดเดิมถ้ารอบนี้น้อยกว่า', async () => {
+    db.replies = saveReplies({ plays: 3, best_total: '9000000', best_tier: 7, created: false })
+    const body = await (await post(player, record('ทดสอบ', { work1: { amount: '40000', freq: 'month' } }))).json()
+    expect(body).toMatchObject({ plays: 3, bestTotal: 9_000_000, newBest: false, created: false })
+  })
+  it('ตัวเลขเกินจริงถูก flag และไม่ถูกนับเป็นยอดสูงสุด', async () => {
+    db.replies = saveReplies({ best_total: null, best_tier: null })
     const body = await (await post(player, record('ทดสอบ', { work1: { amount: '90000000', freq: 'month' } }))).json()
-    expect(body.flagged).toBe(true)
+    expect(body).toMatchObject({ flagged: true, newBest: false })
   })
-  it('ปฏิเสธชื่อหยาบก่อนแตะฐานข้อมูล', async () => {
-    const res = await post(player, record('ไอสัส'))
-    expect(res.status).toBe(400)
-    expect((await res.json()).code).toBe('name_not_allowed')
+  it('ไม่มีบัตรผ่าน PIN → 401, บัตรของชื่ออื่น → 403 (ก่อนแตะฐานข้อมูล)', async () => {
+    const none = await post(player, { record: record('ทดสอบ').record })
+    expect(none.status).toBe(401)
+    expect((await none.json()).code).toBe('claim_required')
+    const other = await post(player, record('ทดสอบ', {}, issueClaim('คนอื่น')))
+    expect(other.status).toBe(403)
+    expect(await post(player, record('ทดสอบ', {}, 'forged.token.value')).then((r) => r.status)).toBe(401)
     expect(db.queries).toHaveLength(0)
+  })
+  it('ตั้งชื่ออะไรก็ได้ (ไม่มีตัวกรองคำ)', async () => {
+    db.replies = saveReplies()
+    expect((await post(player, record('ชื่อแปลกๆ!!'))).status).toBe(201)
   })
   it('จำกัดความถี่ต่อ IP', async () => {
     db.replies = [[{ n: 10 }]]
@@ -61,6 +80,46 @@ describe('POST /api/player', () => {
     expect(bad.status).toBe(415)
     expect((await post(player, '{not json')).status).toBe(400)
     expect((await post(player, 'x'.repeat(9000))).status).toBe(413)
+  })
+})
+
+describe('GET /api/name + POST /api/claim (PIN)', () => {
+  const claim = (body, ip = '5.5.5.5') => post(claimApi, body, { 'x-real-ip': ip })
+  it('เช็กชื่อ: ว่าง → create, มี PIN แล้ว → login', async () => {
+    db.replies = [[]]
+    expect(await (await get(nameApi, '?name=' + encodeURIComponent('มายด์'))).json()).toMatchObject({ needsPin: 'create', taken: false })
+    db.replies = [[{ has_pin: true }]]
+    expect(await (await get(nameApi, '?name=Mind')).json()).toMatchObject({ needsPin: 'login', taken: true })
+  })
+  it('จองชื่อใหม่ + ตั้ง PIN → ได้บัตรผ่าน; ชื่อมีเจ้าของแล้ว → 409', async () => {
+    db.replies = [[{ byName: 0, byIp: 0 }], [{ name_key: 'มายด์' }]]
+    const ok = await claim({ name: 'มายด์', pin: '123456', mode: 'create' })
+    expect(ok.status).toBe(200)
+    expect((await ok.json()).claim).toMatch(/^\d+\.[\w-]+\.[\w-]+$/)
+    const insert = db.queries.at(-1)
+    expect(insert.text).toContain('where accounts.pin_hash is null')
+    expect(insert.values.join(' ')).not.toContain('123456') // เก็บเฉพาะค่าแฮช
+    db.replies = [[{ byName: 0, byIp: 0 }], []]
+    expect((await claim({ name: 'มายด์', pin: '123456', mode: 'create' })).status).toBe(409)
+  })
+  it('ใส่ PIN ถูก → ได้บัตรผ่าน, ผิด → 401 และถูกบันทึกไว้นับการเดา', async () => {
+    const stored = hashPin('654321')
+    db.replies = [[{ byName: 0, byIp: 0 }], [{ pin_hash: stored }], []]
+    expect((await claim({ name: 'Mind', pin: '654321', mode: 'login' })).status).toBe(200)
+    db.replies = [[{ byName: 0, byIp: 0 }], [{ pin_hash: stored }], []]
+    const bad = await claim({ name: 'Mind', pin: '000000', mode: 'login' })
+    expect(bad.status).toBe(401)
+    expect(db.queries.at(-1).text).toContain('insert into pin_attempts')
+    expect(db.queries.at(-1).values).toContain(false)
+  })
+  it('ผิดเกิน 5 ครั้งต่อชื่อ หรือ 20 ครั้งต่อ IP → ล็อก 429', async () => {
+    db.replies = [[{ byName: 5, byIp: 5 }]]
+    expect((await claim({ name: 'Mind', pin: '654321', mode: 'login' })).status).toBe(429)
+    db.replies = [[{ byName: 0, byIp: 20 }]]
+    expect((await claim({ name: 'อีกชื่อ', pin: '654321', mode: 'login' })).status).toBe(429)
+  })
+  it('PIN ไม่ใช่ตัวเลข 6 หลัก → 400', async () => {
+    for (const pin of ['12345', 'abcdef', 123456]) expect((await claim({ name: 'Mind', pin, mode: 'login' })).status).toBe(400)
   })
 })
 
@@ -79,10 +138,11 @@ describe('GET /api/player', () => {
 })
 
 describe('GET /api/leaderboard', () => {
-  it('ไม่รวมผลที่ flagged/hidden/ไม่สาธารณะ', async () => {
+  it('จัดอันดับด้วยยอดสูงสุด และไม่รวมผลที่ซ่อน/ไม่สาธารณะ/ไม่มียอดสูงสุด', async () => {
     db.replies = [[], []]
     await get(leaderboard, '?tier=3')
-    expect(db.queries[0].text).toContain('is_public and not flagged and not hidden')
+    expect(db.queries[0].text).toContain('is_public and not hidden and best_total is not null')
+    expect(db.queries[0].text).toContain('order by best_total desc')
   })
   it('tier/ช่วงอายุผิด → 400', async () => {
     expect((await get(leaderboard, '?tier=99')).status).toBe(400)

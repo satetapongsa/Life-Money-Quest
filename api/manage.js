@@ -23,7 +23,11 @@ export async function POST(request) {
     // ไม่บอกว่าไม่มี id นี้หรือกุญแจผิด เพื่อไม่ให้เดา id ได้
     if (!rows.length || !tokenMatches(token, rows[0].owner_hash)) return fail(403, 'forbidden')
 
-    if (action === 'delete') await sql`delete from players where id = ${id}`
+    // ลบผล = ลบชื่อและ PIN ด้วย (ชื่อนี้ว่างให้ตั้งใหม่ได้)
+    if (action === 'delete') {
+      const [gone] = await sql`delete from players where id = ${id} returning name_key`
+      if (gone) await sql`delete from accounts where name_key = ${gone.name_key}`
+    }
     else await sql`update players set is_public = ${action === 'show'} where id = ${id}`
     return json({ ok: true, action })
   } catch (err) {

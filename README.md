@@ -31,7 +31,7 @@ npm run build:icons          # สร้างไอคอนแอปใหม�
 | ส่วน | ไฟล์ |
 | --- | --- |
 | API (Vercel Functions) | `api/player.js` (บันทึก/อ่านผล), `api/leaderboard.js` (ระดับ + ช่วงอายุ), `api/share-page.js` (ลิงก์ `/r/:id` พร้อมพรีวิว), `api/og.js` (รูปพรีวิว), `api/manage.js` (เจ้าของซ่อน/ลบ), `api/report.js`, `api/stats.js` |
-| ตรวจชื่อ / ตัวเลขเกินจริง | `src/lib/moderation.js`, `src/lib/fairness.js` |
+| ชื่อ + PIN / ตัวเลขเกินจริง | `src/lib/names.js`, `api/name.js`, `api/claim.js`, `api/_lib/pin.js`, `src/lib/fairness.js` |
 | เงินออม / ทำนายอนาคต / ไอเทม | `src/lib/savings.js`, `src/data/items.js` |
 | ผู้ดูแล | `api/admin.js`, `src/components/AdminPage.jsx` |
 | แอปบนมือถือ (PWA) / ธีม | `public/manifest.webmanifest`, `public/sw.js` (เปลี่ยนชื่อแคชทุกเวอร์ชัน), `public/theme-init.js`, `src/lib/install.js`, `src/lib/theme.js` |
@@ -48,6 +48,7 @@ npm run build:icons          # สร้างไอคอนแอปใหม�
 - ผู้เล่นเลือกได้ว่าจะขึ้นลีดเดอร์บอร์ดหรือไม่ (ไม่ขึ้น = เห็นได้เฉพาะคนมีลิงก์ ซึ่ง id สุ่ม 10 ตัวอักษร)
 - หน้า `/r/:id` escape ชื่อผู้เล่นก่อนใส่ใน HTML
 - เจ้าของผลได้กุญแจลับตอนบันทึก (เก็บในเบราว์เซอร์) ฐานข้อมูลเก็บแค่ค่าแฮชไว้ตรวจตอนซ่อน/ลบ
-- ชื่อที่หยาบ/โฆษณาถูกปฏิเสธ ตัวเลขเกินจริงไม่ขึ้นลีดเดอร์บอร์ด และรายงานครบ 3 คนซ่อนอัตโนมัติ
+- 1 ชื่อ = 1 ผู้เล่น ล็อกด้วย PIN 6 หลัก (scrypt) ต้องยืนยัน PIN ก่อนบันทึกผล ผิด 5 ครั้ง/ชื่อ หรือ 20 ครั้ง/IP ใน 15 นาทีถูกล็อก
+- ตัวเลขเกินจริงไม่นับเป็นยอดสูงสุด และรายงานครบ 3 คนซ่อนอัตโนมัติ
 - หน้าผู้ดูแล: session ลงลายเซ็น HMAC อายุ 8 ชม. (เปลี่ยนรหัสแล้วหลุดทันที), ผิดเกิน 5 ครั้ง/15 นาทีถูกล็อก, ไม่ให้ search engine เก็บ
 - Security headers (CSP, X-Frame-Options, nosniff ฯลฯ) ตั้งใน `vercel.json`

@@ -19,7 +19,7 @@ import { useRoute, navigate } from './lib/router'
 
 const freshPlayer = () => {
   const gender = Math.random() < 0.5 ? 'm' : 'f'
-  return { name: '', age: '', gender, look: randomLook(gender), entries: {}, isPublic: true }
+  return { name: '', age: '', gender, look: randomLook(gender), entries: {}, isPublic: true, claim: null }
 }
 
 const stageLook = (stage, entry) => (stage.altMode && entry?.mode === 'work' ? stage.altMode.look : stage.look)
@@ -154,7 +154,6 @@ function Game({ game }) {
         player={player}
         setPlayer={setPlayer}
         onStart={() => {
-          setPlayer((p) => ({ ...p, name: p.name.trim() }))
           setIdx(0)
           setScreen('stage')
         }}

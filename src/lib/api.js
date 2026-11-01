@@ -10,7 +10,11 @@ async function request(path, options) {
 const postJson = (path, body) =>
   request(path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
 
-export const savePlayer = (player, isPublic) => postJson('/api/player', { record: toRecord(player), isPublic })
+export const savePlayer = (player, isPublic) => postJson('/api/player', { record: toRecord(player), isPublic, claim: player.claim })
+
+export const checkName = (name) => request(`/api/name?name=${encodeURIComponent(name)}`)
+
+export const claimName = (name, pin, mode) => postJson('/api/claim', { name, pin, mode })
 
 export const fetchPlayer = (id) => request(`/api/player?id=${encodeURIComponent(id)}`)
 

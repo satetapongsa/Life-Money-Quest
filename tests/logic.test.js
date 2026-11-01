@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { computeResult, inflationAdjusted } from '../src/lib/calc.js'
 import { fromRecord, toRecord, MAX_AMOUNT } from '../src/lib/record.js'
-import { nameProblem } from '../src/lib/moderation.js'
+import { cleanName, nameKey, isPin } from '../src/lib/names.js'
 import { unrealisticStages, isUnrealistic } from '../src/lib/fairness.js'
 import { stagesForAge, yearlyAmount, ALL_STAGES } from '../src/data/stages.js'
 import { inflationFactor } from '../src/data/inflation.js'
@@ -77,9 +77,9 @@ describe('ตรวจข้อมูลจากลิงก์/request (fromRe
     expect(fromRecord({ v: 2, n: 'a', a: 20 })).toBeNull()
     expect(fromRecord(null)).toBeNull()
   })
-  it('ตัดชื่อเหลือ 16 ตัว, ตัวเลือกแปลกใช้ค่าปกติ, เงินเกินเพดานถูกทิ้ง', () => {
+  it('ตัดชื่อเหลือ 20 ตัว, ตัวเลือกแปลกใช้ค่าปกติ, เงินเกินเพดานถูกทิ้ง', () => {
     const p = fromRecord({ v: 1, n: 'x'.repeat(40), a: 30, g: 'zz', l: { presetIndex: 999, pose: 'evil' }, e: { kinder: { amount: 20, days: 'hack' }, uni: { amount: MAX_AMOUNT + 1 }, ['__proto__']: { amount: 1 } } })
-    expect(p.name).toHaveLength(16)
+    expect(p.name).toHaveLength(20)
     expect(p.gender).toBe('m')
     expect(p.look.presetIndex).toBe(0)
     expect(p.look.pose).toBe('idle')
@@ -93,12 +93,20 @@ describe('ตรวจข้อมูลจากลิงก์/request (fromRe
   })
 })
 
-describe('กรองชื่อ', () => {
-  it.each(['ควย', 'ค ว ย', 'เหี้ย', 'เหี่ยมาก', 'สั๊ดดดด', 'F.U.C.K', 'sh1t', 'หีมาก', 'www.slot99.com', 'แอดไลน์ @abcd123', '0812345678', 'ufabet88', 'บาคาร่า'])('บล็อก "%s"', (n) => {
-    expect(nameProblem(n)).not.toBeNull()
+describe('ชื่ออิสระ + PIN (v2.5)', () => {
+  it('ตั้งชื่ออะไรก็ได้ (ไม่กรองคำ) แต่ตัดอักขระล่องหน/ช่องว่างเกิน และยาวไม่เกิน 20', () => {
+    expect(cleanName('  ชื่อ   อะไรก็ได้ ')).toBe('ชื่อ อะไรก็ได้')
+    expect(cleanName('ab' + String.fromCharCode(0x200b) + 'c' + String.fromCharCode(0x202e))).toBe('abc')
+    expect([...cleanName('ก'.repeat(40))]).toHaveLength(20)
+    expect(cleanName('www.example.com')).toBe('www.example.com')
   })
-  it.each(['ต้นข้าว', 'มายด์', 'Dickson', 'Essex', 'Peacock', 'หีบเพลง', 'กู', 'มึง', 'Grape', 'John Smith', 'ปลื้ม 2005', 'สัตว์โลก'])('อนุญาต "%s"', (n) => {
-    expect(nameProblem(n)).toBeNull()
+  it('ชื่อซ้ำ = คนเดียวกัน ไม่สนตัวพิมพ์/ช่องว่าง', () => {
+    expect(nameKey(' Mind ')).toBe(nameKey('MIND'))
+    expect(nameKey('มายด์')).not.toBe(nameKey('มาย'))
+  })
+  it('PIN ต้องเป็นตัวเลข 6 หลัก', () => {
+    expect(isPin('012345')).toBe(true)
+    for (const bad of ['12345', '1234567', '12345a', 123456, '']) expect(isPin(bad)).toBe(false)
   })
 })
 

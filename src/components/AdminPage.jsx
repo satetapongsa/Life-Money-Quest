@@ -85,7 +85,8 @@ export default function AdminPage() {
   }
 
   const act = async (action, row) => {
-    if (action === 'delete' && !window.confirm(`ลบผลของ "${row.name}" ถาวร?`)) return
+    if (action === 'delete' && !window.confirm(`ลบผลของ "${row.name}" ถาวร? (ชื่อนี้จะว่างให้คนอื่นตั้งได้)`)) return
+    if (action === 'resetpin' && !window.confirm(`รีเซ็ต PIN ของ "${row.name}"? คนต่อไปที่ใช้ชื่อนี้จะตั้ง PIN ใหม่ได้`)) return
     setBusy(row.id)
     try {
       await call({ action, id: row.id }, session.token)
@@ -137,13 +138,14 @@ export default function AdminPage() {
             <div className="admin-info">
               <b>{r.name}</b>
               <small>
-                {r.age} ปี · {TIERS[r.tier].emoji} {baht(r.total)} ฿ · {new Date(r.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
+                {r.age} ปี · {TIERS[r.tier].emoji} ล่าสุด {baht(r.total)} ฿{r.best_total != null && ` · สูงสุด ${baht(r.best_total)} ฿`} · เล่น {r.plays} ครั้ง · {new Date(r.updated_at || r.created_at).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
               </small>
               <span className="admin-tags">
                 {r.reports > 0 && <i className="tag red">🚩 {r.reports}</i>}
                 {r.flagged && <i className="tag orange">เกินจริง</i>}
                 {r.hidden && <i className="tag gray">ซ่อนอยู่</i>}
                 {!r.is_public && <i className="tag gray">ไม่สาธารณะ</i>}
+                {!r.has_pin && <i className="tag gray">ยังไม่ตั้ง PIN</i>}
               </span>
             </div>
             <div className="admin-actions">
@@ -153,6 +155,7 @@ export default function AdminPage() {
               ) : (
                 <button className="btn small yellow" disabled={busy === r.id} onClick={() => act('hide', r)}>ซ่อน</button>
               )}
+              {r.has_pin && <button className="btn small ghost" disabled={busy === r.id} onClick={() => act('resetpin', r)}>รีเซ็ต PIN</button>}
               <button className="btn small ghost danger" disabled={busy === r.id} onClick={() => act('delete', r)}>ลบ</button>
             </div>
           </div>

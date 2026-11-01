@@ -1,9 +1,9 @@
 // รูปแบบข้อมูลผู้เล่นที่ใช้ร่วมกันระหว่างเว็บและ API (ไฟล์นี้ต้องรันบน Node ได้ — ใส่ .js ทุก import)
 import { ALL_STAGES, FREQS, SCHOOL_DAYS, MIN_AGE, MAX_AGE } from '../data/stages.js'
 import { PRESETS, EXPRESSIONS, POSES } from '../data/avatars.js'
+import { cleanName } from './names.js'
 
 export const MAX_AMOUNT = 100_000_000
-export const MAX_NAME = 16
 
 export function toRecord(player) {
   return {
@@ -23,7 +23,7 @@ const intIn = (v, min, max, fallback) => (Number.isInteger(v) && v >= min && v <
 // ข้อมูลจากลิงก์/จาก request เป็นข้อมูลที่ใครก็แก้ได้ — ตรวจและกรองทุกช่องก่อนใช้ คืน null ถ้าใช้ไม่ได้
 export function fromRecord(r) {
   if (!r || typeof r !== 'object' || r.v !== 1) return null
-  const name = typeof r.n === 'string' ? r.n.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, MAX_NAME) : ''
+  const name = cleanName(r.n)
   const age = intIn(r.a, MIN_AGE, MAX_AGE, null)
   if (!name || age === null) return null
   const gender = oneOf(r.g, ['m', 'f'], 'm')

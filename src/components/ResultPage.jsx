@@ -90,11 +90,16 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
     }
   }
   const [saveState, setSaveState] = useState(savedId ? 'saved' : shared ? 'none' : 'saving')
+  const [saveInfo, setSaveInfo] = useState(null) // { plays, bestTotal, newBest } จากเซิร์ฟเวอร์
   const [imgBusy, setImgBusy] = useState(false)
 
   // บันทึกผลลงฐานข้อมูลครั้งเดียว (ถ้าไม่สำเร็จ ลิงก์แชร์จะใช้แบบเก็บข้อมูลในลิงก์แทน)
   useEffect(() => {
     if (shared || savedId) return
+    if (!player.claim) {
+      setSaveState('failed')
+      return
+    }
     let alive = true
     // บันทึกประวัติในเครื่องครั้งเดียวต่อการบันทึก (effect อาจรันซ้ำ)
     if (!saving.has(player)) {
@@ -111,10 +116,13 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
     }
     saving
       .get(player)
-      .then(({ id }) => {
+      .then((res) => {
         track('game_complete', { tier: r.tierIndex, age: Math.floor(player.age / 10) * 10 })
-        onSaved?.(id)
-        if (alive) setSaveState('saved')
+        onSaved?.(res.id)
+        if (alive) {
+          setSaveInfo(res)
+          setSaveState('saved')
+        }
       })
       .catch(() => alive && setSaveState('failed'))
     return () => {
@@ -343,7 +351,16 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
                 : isPublicNow
                   ? '✅ บันทึกแล้ว · ชื่อคุณขึ้นลีดเดอร์บอร์ดแล้ว'
                   : '✅ บันทึกแล้ว · ไม่แสดงในลีดเดอร์บอร์ด')}
-            {saveState === 'failed' && '⚠️ บันทึกออนไลน์ไม่สำเร็จ ยังแชร์ได้ด้วยลิงก์สำรอง'}
+            {saveState === 'failed' && (player.claim ? '⚠️ บันทึกออนไลน์ไม่สำเร็จ ยังแชร์ได้ด้วยลิงก์สำรอง' : '⚠️ เล่นแบบไม่ได้ยืนยัน PIN ผลนี้จึงไม่ถูกบันทึก (แชร์ได้ด้วยลิงก์สำรอง)')}
+          </p>
+        )}
+        {saveInfo && saveInfo.plays > 1 && (
+          <p className={`best-line ${saveInfo.newBest ? 'new' : ''}`}>
+            {saveInfo.newBest
+              ? `🏆 ทำลายสถิติใหม่! ยอดสูงสุดของ ${player.name} ตอนนี้ ${baht(saveInfo.bestTotal)} บาท (เล่นครั้งที่ ${saveInfo.plays})`
+              : saveInfo.bestTotal != null
+                ? `📌 อัปเดตผลแล้ว (เล่นครั้งที่ ${saveInfo.plays}) · ลีดเดอร์บอร์ดยังใช้ยอดสูงสุดของคุณ ${baht(saveInfo.bestTotal)} บาท`
+                : `📌 อัปเดตผลแล้ว (เล่นครั้งที่ ${saveInfo.plays})`}
           </p>
         )}
         <div className="link-box">

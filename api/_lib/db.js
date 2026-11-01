@@ -76,6 +76,9 @@ export function publicRow(r) {
     tier: r.tier,
     flagged: !!r.flagged,
     isPublic: r.is_public !== false,
+    plays: r.plays ?? 1,
+    bestTotal: r.best_total == null ? null : Number(r.best_total),
+    bestTier: r.best_tier ?? null,
     createdAt: r.created_at,
   }
 }

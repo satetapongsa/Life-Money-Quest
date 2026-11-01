@@ -1,5 +1,5 @@
 // Service worker: เปิดเร็วขึ้นและเปิดได้แม้เน็ตหลุด — ไม่แคช /api (ข้อมูลต้องสดเสมอ) และไม่ยุ่งกับโดเมนอื่น
-const CACHE = 'lmq-v2.4.0'
+const CACHE = 'lmq-v2.5.0'
 const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png']
 
 self.addEventListener('install', (event) => {
