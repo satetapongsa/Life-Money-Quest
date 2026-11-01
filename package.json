@@ -11,7 +11,8 @@
     "mod": "node --env-file=.env.local scripts/moderate.mjs",
     "test": "vitest run",
     "build:og": "node scripts/build-og.mjs",
-    "build:icons": "node scripts/build-icons.mjs"
+    "build:icons": "node scripts/build-icons.mjs",
+    "build:cover": "npm run build:og && node scripts/build-cover.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

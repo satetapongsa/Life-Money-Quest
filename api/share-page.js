@@ -29,11 +29,13 @@ export async function GET(request) {
       `<meta property="og:image:width" content="1200" />`,
       `<meta property="og:image:height" content="630" />`,
       `<meta name="twitter:card" content="summary_large_image" />`,
+      `<meta name="twitter:image" content="${esc(`${url.origin}/api/og?id=${id}`)}" />`,
     ].join('\n    ')
+    // ลบแท็กพรีวิวของหน้าแรก (ปกเว็บ) ออกก่อน แล้วใส่ของผู้เล่นคนนี้แทน กันพรีวิวซ้ำกันสองรูป
     const html = page
       .replace(/<title>.*?<\/title>/, `<title>${esc(title)}</title>`)
-      .replace(/<meta property="og:(title|description|url)"[^>]*>\s*/g, '')
-      .replace(/<meta name="twitter:(title|description|card)"[^>]*>\s*/g, '')
+      .replace(/<meta property="og:(title|description|url|image[\w:]*)"[^>]*>\s*/g, '')
+      .replace(/<meta name="twitter:(title|description|card|image)"[^>]*>\s*/g, '')
       .replace('</head>', `    ${meta}\n  </head>`)
     return new Response(html, {
       headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, s-maxage=300, stale-while-revalidate=600' },
