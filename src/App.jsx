@@ -165,6 +165,7 @@ function Game({ game }) {
     left = (
       <StagePage
         key={s.id}
+        age={age}
         stage={s}
         index={idx}
         count={stages.length}

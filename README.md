@@ -14,6 +14,7 @@ npm run dev                  # http://localhost:5173  (API /api/* รันใ�
 npm run build && npm run preview   # ทดสอบ build จริง + security headers + API แบบ Node ล้วน
 npm test                     # ชุดทดสอบสูตรคำนวณ การกรองชื่อ และ API (ฐานข้อมูลจำลอง)
 npm run mod -- list          # เครื่องมือผู้ดูแลแบบคำสั่ง (หรือใช้หน้าเว็บ /admin)
+npm run build:icons          # สร้างไอคอนแอปใหม่ใน public/icons
 ```
 
 แก้ `server/og-card.jsx` (รูปพรีวิวลิงก์) หรือ Avatar/Scene แล้วให้รัน `npm run build:og` และ commit `api/_gen/og-card.js` ด้วย
@@ -33,6 +34,7 @@ npm run mod -- list          # เครื่องมือผู้ดูแ�
 | ตรวจชื่อ / ตัวเลขเกินจริง | `src/lib/moderation.js`, `src/lib/fairness.js` |
 | เงินออม / ทำนายอนาคต / ไอเทม | `src/lib/savings.js`, `src/data/items.js` |
 | ผู้ดูแล | `api/admin.js`, `src/components/AdminPage.jsx` |
+| แอปบนมือถือ (PWA) / ธีม | `public/manifest.webmanifest`, `public/sw.js` (เปลี่ยนชื่อแคชทุกเวอร์ชัน), `public/theme-init.js`, `src/lib/install.js`, `src/lib/theme.js` |
 | ตรวจข้อมูล/คำนวณ (ใช้ร่วมเว็บ+API) | `src/lib/record.js`, `src/lib/calc.js` |
 | ตัวละคร / ฉาก | `src/components/Avatar.jsx`, `src/components/Scene.jsx`, `src/data/avatars.js` |
 | ประวัติเวอร์ชัน | `src/data/versions.js` (เพิ่มรายการใหม่ทุกครั้งที่อัปเดตใหญ่) |

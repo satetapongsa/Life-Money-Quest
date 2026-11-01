@@ -157,3 +157,33 @@ describe('ไอเทมประจำระดับ (v2.3)', async () => {
     expect(itemForTier(99)).toBeNull()
   })
 })
+
+describe('เนื้อหาเพิ่ม (v2.4)', async () => {
+  const { STAGE_FACTS } = await import('../src/data/facts.js')
+  const { EXPRESSIONS, POSES } = await import('../src/data/avatars.js')
+  const { COMPARISONS } = await import('../src/data/tiers.js')
+  const fs = await import('node:fs')
+  const { APP_VERSION } = await import('../src/data/versions.js')
+  it('มี "รู้หรือไม่" ครบทุกช่วงวัย', () => {
+    for (const s of ALL_STAGES) expect(STAGE_FACTS[s.id]?.length).toBeGreaterThan(0)
+  })
+  it('สีหน้า/ท่าทางใหม่ผ่านการตรวจจากลิงก์', () => {
+    expect(EXPRESSIONS.map((e) => e.id)).toContain('excited')
+    const p = fromRecord({ v: 1, n: 'a', a: 20, g: 'm', l: { expression: 'flirt', pose: 'peace' }, e: {} })
+    expect(p.look).toMatchObject({ expression: 'flirt', pose: 'peace' })
+    expect(POSES.map((x) => x.id)).toContain('shrug')
+  })
+  it('ฉายาใหม่: ค่าขนมไม่มีวันหยุด + ค่าขนมแช่แข็ง + นักออมตั้งแต่อนุบาล', () => {
+    const r = computeResult(player(16, {
+      kinder: { amount: '20', days: 'all', save: 20 }, primary: { amount: '20', days: 'all' }, middle: { amount: '20', days: 'all' }, high: { amount: '20', days: 'all' },
+    }))
+    const titles = r.badges.map((b) => b.title)
+    expect(titles).toEqual(expect.arrayContaining(['ค่าขนมไม่มีวันหยุด', 'ค่าขนมแช่แข็ง', 'นักออมตั้งแต่อนุบาล']))
+  })
+  it('ของที่ซื้อได้ไม่มีชื่อซ้ำ', () => {
+    expect(new Set(COMPARISONS.map((c) => c.label)).size).toBe(COMPARISONS.length)
+  })
+  it('แคชของ service worker ตรงกับเวอร์ชันแอป (ต้องเปลี่ยนทุกครั้งที่ออกเวอร์ชัน)', () => {
+    expect(fs.readFileSync('public/sw.js', 'utf8')).toContain(`'lmq-v${APP_VERSION}'`)
+  })
+})

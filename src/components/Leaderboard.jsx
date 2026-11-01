@@ -63,7 +63,7 @@ export default function Leaderboard() {
           <small>รวม</small>
         </button>
         {TIERS.map((t, i) => (
-          <button key={t.title} role="tab" aria-selected={tier === i} className={`tier-tab ${tier === i ? 'on' : ''}`} style={{ '--tier': t.color }} onClick={() => setTier(i)} title={t.title}>
+          <button key={t.title} role="tab" aria-selected={tier === i} className={`tier-tab ${tier === i ? 'on' : ''}`} style={{ '--tier': t.color }} onClick={() => setTier(i)} title={t.title} aria-label={`${t.title} (${counts[i]} คน)`}>
             <span>{t.emoji}</span>
             <small>{counts[i]}</small>
           </button>

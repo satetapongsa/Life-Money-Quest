@@ -47,4 +47,10 @@ export const COMPARISONS = [
   { emoji: '🗾', label: 'ทริปญี่ปุ่น', unit: 'ทริป', price: 45_000 },
   { emoji: '🚗', label: 'รถเก๋งป้ายแดง', unit: 'คัน', price: 700_000 },
   { emoji: '🏢', label: 'คอนโดกลางเมือง', unit: 'ห้อง', price: 3_500_000 },
+  { emoji: '🍗', label: 'ข้าวมันไก่', unit: 'จาน', price: 60 },
+  { emoji: '🎤', label: 'บัตรคอนเสิร์ต', unit: 'ใบ', price: 3_500 },
+  { emoji: '🎮', label: 'เครื่องเกมคอนโซล', unit: 'เครื่อง', price: 18_000 },
+  { emoji: '🪙', label: 'ทองคำหนัก 1 บาท', unit: 'บาททอง', price: 60_000 },
+  { emoji: '🎓', label: 'ค่าเทอมมหาลัยรัฐ 4 ปี', unit: 'ใบปริญญา', price: 160_000 },
+  { emoji: '🏡', label: 'บ้านเดี่ยวชานเมือง', unit: 'หลัง', price: 5_000_000 },
 ]

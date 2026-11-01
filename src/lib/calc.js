@@ -37,6 +37,15 @@ export function computeResult(player) {
     hasAdult: adultRows.length > 0,
     uniMode: player.entries.uni?.mode,
   })
+  const e = player.entries
+  const schoolDaily = ['kinder', 'primary', 'middle', 'high'].map((id) => e[id]).filter(Boolean)
+  if (Number(e.kinder?.save) >= 20) badges.push({ emoji: '🐣', title: 'นักออมตั้งแต่อนุบาล', desc: 'เริ่มเก็บเงินตั้งแต่ยังตัวเล็ก' })
+  if (schoolDaily.length >= 3 && schoolDaily.every((x) => x.days === 'all')) badges.push({ emoji: '🍭', title: 'ค่าขนมไม่มีวันหยุด', desc: 'ได้ค่าขนมทุกวัน แม้วันเสาร์อาทิตย์' })
+  if (schoolDaily.length >= 3 && schoolDaily.every((x) => x.amount === schoolDaily[0].amount)) badges.push({ emoji: '🧊', title: 'ค่าขนมแช่แข็ง', desc: 'ค่าขนมเท่าเดิมตั้งแต่อนุบาลยันมัธยม' })
+  const perYear = (id) => (rows.find((r) => r.stage.id === id)?.total ?? 0) / Math.max(1, rows.find((r) => r.stage.id === id)?.stage.years ?? 1)
+  if (perYear('work1') > 0 && perYear('work2') >= perYear('work1') * 2) badges.push({ emoji: '📈', title: 'รายได้พุ่งทะยาน', desc: 'รายได้วัย 30 มากกว่าช่วงเริ่มงานเท่าตัว' })
+  if (player.age < 30 && total >= 10_000_000) badges.push({ emoji: '⚡', title: 'อายุน้อยสิบล้าน', desc: 'เงินผ่านมือทะลุ 10 ล้านก่อนอายุ 30' })
+  if (e.retire && perYear('retire') >= 600_000) badges.push({ emoji: '🏝️', title: 'เกษียณสุขสบาย', desc: 'รายได้หลังเกษียณเกินเดือนละ 5 หมื่น' })
   if (savings.answered && savings.pct >= 50) badges.unshift({ emoji: '🏦', title: 'เซียนการออม', desc: 'เก็บได้ครึ่งหนึ่งของเงินที่ผ่านมือ' })
   else if (savings.answered && savings.pct >= 25) badges.unshift({ emoji: '🐷', title: 'นักออมตัวยง', desc: 'เก็บออมได้เกินหนึ่งในสี่' })
   return {

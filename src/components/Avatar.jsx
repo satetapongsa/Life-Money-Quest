@@ -24,6 +24,8 @@ const POSE_ANGLES = {
   cheer: [155, -155],
   hips: [38, -38],
   point: [8, -92],
+  peace: [8, -150],
+  shrug: [62, -62],
 }
 
 // ท่าชั่วคราว (ดีใจ/ขยับเล่น) ทับท่าประจำตัว: [มุมแขนซ้าย, มุมแขนขวา, คลาสแขนซ้าย, คลาสแขนขวา]
@@ -519,7 +521,7 @@ export default function Avatar({ gender, look, presetIndex, expression, pose, va
         <g className={animClass} style={{ transformOrigin: origin }}>
           <Box x={ax} y={torsoTop + 2} w={aw} h={ah} c={skin} d={5} />
           <Box x={ax} y={torsoTop + 2} w={aw} h={sleeveLen} c={sleeveColor} d={5} />
-          {side > 0 && (act ? action === 'victory' : pose === 'point') && (
+          {side > 0 && (act ? action === 'victory' : pose === 'point' || pose === 'peace') && (
             <Box x={ax + aw / 2 - 2} y={torsoTop + ah} w={4} h={8} c={skin} d={3} />
           )}
         </g>

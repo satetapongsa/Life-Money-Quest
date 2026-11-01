@@ -111,7 +111,15 @@ export default function AvatarStage({ player, look, scene, levelUpKey, caption, 
         </div>
       )}
 
-      <div className={`avatar-wrap ${phase === 'morph' ? 'morphing' : ''}`} onClick={poke} title="จิ้มตัวละครดูสิ!">
+      <div
+        className={`avatar-wrap ${phase === 'morph' ? 'morphing' : ''}`}
+        onClick={poke}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), poke())}
+        role="button"
+        tabIndex={0}
+        aria-label={`ตัวละคร ${player.name || ''} (กดเพื่อให้ทำท่าดีใจ)`}
+        title="จิ้มตัวละครดูสิ!"
+      >
         {player.name && (
           <div className="nametag" style={{ top: `${tagTop}%` }}>
             {player.name}

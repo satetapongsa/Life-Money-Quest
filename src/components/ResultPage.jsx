@@ -335,7 +335,7 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
       <div className="card share-card">
         <h3 className="sec">📣 แชร์ให้เพื่อนเล่นต่อ</h3>
         {!shared && (
-          <p className={`save-status ${saveState}`}>
+          <p className={`save-status ${saveState}`} role="status" aria-live="polite">
             {saveState === 'saving' && '⏳ กำลังบันทึกผล...'}
             {saveState === 'saved' &&
               (flagged
@@ -384,7 +384,8 @@ export default function ResultPage({ player, shared, savedId, onSaved, onRestart
         )}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
+      <div className="sr-live" role="status" aria-live="polite">{toast}</div>
+      {toast && <div className="toast" aria-hidden="true">{toast}</div>}
     </div>
   )
 }

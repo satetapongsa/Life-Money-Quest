@@ -2,10 +2,19 @@ import { FREQS, SCHOOL_DAYS, yearlyAmount } from '../data/stages'
 import { baht } from '../lib/calc'
 import { isUnrealistic, limitText } from '../lib/fairness'
 import { SAVE_CHOICES } from '../lib/savings'
+import { useState } from 'react'
+import { STAGE_FACTS, NOODLE_TODAY } from '../data/facts'
+import { inflationFactor } from '../data/inflation'
+import { pick } from '../lib/color'
 
 const MAX_AMOUNT = 100_000_000 // ต้องตรงกับขีดจำกัดใน lib/share.js
 
-export default function StagePage({ stage, index, count, entry, setEntry, done, onDone, onNext, onBack, isLast }) {
+export default function StagePage({ stage, index, count, entry, setEntry, done, onDone, onNext, onBack, isLast, age }) {
+  const [fact] = useState(() => pick(STAGE_FACTS[stage.id] ?? ['']))
+  // ปีที่ผู้เล่นอยู่ในช่วงนี้ และราคาก๋วยเตี๋ยวตอนนั้น (ย้อนจากเงินเฟ้อ)
+  const nowYear = new Date().getFullYear()
+  const stageYear = nowYear - Number(age) + stage.from
+  const noodleThen = stageYear < nowYear - 1 ? NOODLE_TODAY / inflationFactor(stageYear, nowYear) : null
   const e = entry ?? (stage.kind === 'school' ? { amount: '', days: 'school' } : { amount: '', freq: stage.typicalFreq || 'month', mode: 'study' })
   const update = (patch) => setEntry({ ...e, ...patch })
   const filled = e.amount !== '' && Number(e.amount) >= 0
@@ -60,6 +69,7 @@ export default function StagePage({ stage, index, count, entry, setEntry, done, 
           min="0"
           value={e.amount}
           placeholder="0"
+          aria-label={`จำนวนเงิน (${unit})`}
           onChange={(ev) => update({ amount: Number(ev.target.value) > MAX_AMOUNT ? String(MAX_AMOUNT) : ev.target.value })}
           onKeyDown={(ev) => {
             if (ev.key === 'Enter' && filled) (done ? onNext() : onDone())
@@ -85,7 +95,7 @@ export default function StagePage({ stage, index, count, entry, setEntry, done, 
             </button>
           ))}
           <label className="pct-input">
-            <input type="number" inputMode="numeric" min="0" max="100" placeholder="อื่นๆ" value={SAVE_CHOICES.includes(Number(e.save)) || e.save === undefined ? '' : e.save}
+            <input type="number" inputMode="numeric" min="0" max="100" placeholder="อื่นๆ" aria-label="เปอร์เซ็นต์ที่เก็บออม (กรอกเอง)" value={SAVE_CHOICES.includes(Number(e.save)) || e.save === undefined ? '' : e.save}
               onChange={(ev) => update({ save: ev.target.value === '' ? undefined : Math.min(100, Math.max(0, Number(ev.target.value))) })} />
             %
           </label>
@@ -123,6 +133,16 @@ export default function StagePage({ stage, index, count, entry, setEntry, done, 
         )}
       </div>
       {done && <p className="note center">✨ ตัวละครโตขึ้นแล้ว! แก้ตัวเลขได้ตลอดก่อนไปต่อ</p>}
+
+      <aside className="fact">
+        <b>💡 รู้หรือไม่?</b>
+        {noodleThen && (
+          <p>
+            ตอนคุณเริ่ม{stage.title} (ปี พ.ศ. {stageYear + 543}) ก๋วยเตี๋ยวชามละประมาณ <b>{baht(noodleThen)} บาท</b> — วันนี้ราว {NOODLE_TODAY} บาท
+          </p>
+        )}
+        <p>{fact}</p>
+      </aside>
     </div>
   )
 }

@@ -88,6 +88,10 @@ export const EXPRESSIONS = [
   { id: 'chill', eyes: 'sleepy', mouth: 'smile', label: 'ชิลล์ๆ' },
   { id: 'cool', eyes: 'dot', mouth: 'smirk', label: 'เท่ๆ' },
   { id: 'joy', eyes: 'happy', mouth: 'smile', label: 'อารมณ์ดี' },
+  { id: 'excited', eyes: 'sparkle', mouth: 'grin', label: 'ตื่นเต้น' },
+  { id: 'silly', eyes: 'happy', mouth: 'tongue', label: 'ทะเล้น' },
+  { id: 'yawn', eyes: 'sleepy', mouth: 'o', label: 'ง่วงนิดๆ' },
+  { id: 'flirt', eyes: 'wink', mouth: 'smile', label: 'ขยิบตาหวาน' },
 ]
 
 export const POSES = [
@@ -96,6 +100,8 @@ export const POSES = [
   { id: 'cheer', label: 'ชูสองมือ' },
   { id: 'hips', label: 'เท้าสะเอว' },
   { id: 'point', label: 'ชี้นิ้ว' },
+  { id: 'peace', label: 'ชูสองนิ้ว' },
+  { id: 'shrug', label: 'ยักไหล่' },
 ]
 
 export function randomLook(gender, keepPresetIndex = null) {
